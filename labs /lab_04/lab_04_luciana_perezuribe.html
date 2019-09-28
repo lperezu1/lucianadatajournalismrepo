@@ -1571,7 +1571,7 @@ div.tocify {
 install.packages('janitor', repos = &quot;http://cran.us.r-project.org&quot;)</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /var/folders/n1/hjkkpbq97_565fvmxr0hg8p80000gn/T//RtmpnanSE0/downloaded_packages</code></pre>
+##  /var/folders/n1/hjkkpbq97_565fvmxr0hg8p80000gn/T//Rtmph1ZnKa/downloaded_packages</code></pre>
 <pre class="r"><code># Load Tidyverse and Janitor
 
 
@@ -1868,8 +1868,8 @@ glimpse(mingo)</code></pre>
   )</code></pre>
 <p><strong>Task</strong>: Create a codeblock below. Use case_when() or if_else() to create a new column called “state_distribution” that looks at the distributor state column. If distributor state is in West Virginia, this new column should say “in_state_distribution”. If it’s not in West Virginia, it should say “out_of_state_distribution”.</p>
 <pre class="r"><code>#mingo_working&lt;- mingo %&gt;% 
- # mutate(state_distribution = case_when(
-  #reporter_state = WV  ~ &quot;in_state_disribution&quot;,
+ # mutate (state_distribution = case_when(
+ # reporter_state = &quot;WV&quot;    ~ &quot;in_state_disribution&quot;,
   #TRUE ~&quot;out_of_state_distribution&quot;)) </code></pre>
 </div>
 <div id="summarizing" class="section level2">

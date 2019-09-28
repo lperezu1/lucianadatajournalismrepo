@@ -300,8 +300,8 @@ mingo_working <- mingo %>%
 ```{r}
 
 #mingo_working<- mingo %>% 
- # mutate(state_distribution = case_when(
-  #reporter_state = WV	~ "in_state_disribution",
+ # mutate (state_distribution = case_when(
+ # reporter_state = "WV"	~ "in_state_disribution",
   #TRUE ~"out_of_state_distribution")) 
 
 
