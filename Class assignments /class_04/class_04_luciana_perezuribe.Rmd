@@ -96,17 +96,66 @@ Now that the data is in, spend some time examining it.
 
 **Task**: Create a code block below, and write and execute a function to open and view the spreadsheet in a new window tab that you can examine.  In that browser window, use your mouse to sort by a handful of columns, highest to lowest and lowest to highest.  In that browser window, practice turning on filters with your mouse to examine a subset of the data.    
 
+
+```{r}
+#view(baltimore)
+
+
+```
+
 **Task**: Create a code block below and use the glimpse and summary function to examine the shape of the data. Answer each of the following questions in a comment inside the code block:
 * How many rows does the data have? How many columns?   
 * Each column is stored in one of two formats: "chr", or strings of characters, generally used for text; and "dbl", a number format on which mathematical operations can be performed.  Do you see any examples of a column stored as a "dbl" that doesn't really need to be, because we would never do math on it? Are there any columns stored as character that you think should be stored in another format entirely?
 * Based on the information here, how are missing values represented in this data set?
 
+```{r}
+
+
+
+glimpse(baltimore)
+
+#How many rows does the data have? How many columns?  - 290,908 rows and 42 columns  
+# columns with dbl that will not have math performed on- REPORTER_ZIP   ,DRUG_CODE, BUYER_ZIP,DRUG_CODE , TRANSACTION_ID        
+# Are there any columns stored as character that you think should be stored in another format entirely?
+#  Based on the information here, how are missing values represented in this data set? $ BUYER_ADDL_CO_INFO    ,TRANSACTION_CODE , ACTION_INDICATOR
+
+
+```
+
+
+```{r}
+
+summary(baltimore)
+
+
+```
+
 ## Cleaning
 **Task**: Using the function from the janitor package we learned in the last lab, convert all of the column names to lower case.  
+
+```{r}
+
+baltimore <-clean_names(baltimore)
+
+
+```
 
 ## Analysis
 
 **Task**: Which single pharmacy **location** had the most pills sent to it? Produce the code to answer this question in a codeblock below. 
+
+```{r}
+
+#NewCare Home Health Services received 6133600 pills between 2006 and 2012. On February 21, 2007, the Deputy Assistant Administrator, Office of Diversion Control, Drug Enforcement Administration,  proposed the revocation of NewCare Home Health Services as a retail pharmacy, on the ground that the Maryland State Board of Pharmacy had suspended Respondent's state pharmacy license.
+
+
+baltimore %>%group_by(buyer_name, buyer_address1) %>%summarise(shipments = n(),total_pills = sum(dosage_unit))%>%arrange(desc(total_pills))
+
+ 
+
+
+```
+
 
 Hint: you'll need to group by more than just the pharmacy name to answer this question correctly.
 
@@ -114,11 +163,37 @@ Do some quick web research/reporting.  What actions did the DEA and state of Mar
 
 In a comment inside the codeblock, write a paragraph (two to three sentences) that you could drop into a news story that includes the following information: Name and approximate location of the pharmacy; how many pills it received between 2006 and 2012; and a brief description of what actions the DEA and Maryland took against the pharmacy and why. 
 
+
+
 **Task**: What is the name of the distributor that was responsible for sending the most pills to Baltimore City betwen 2006 and 2012? Produce the code to answer this question in a codeblock below.  
+
+```{r}
+
+
+baltimore %>%group_by(reporter_name,reporter_address1,reporter_address2,reporter_state) %>%summarise(shipments = n(),total_pills = sum(dosage_unit))%>%arrange(desc(total_pills))
+
+ 
+#MCKESSON CORPORATION in Maryland  - 49834830 pills sent between 2006 and 2012. 
+
+````
+
+
 
 In a comment inside the codeblock, write the following information: the name of the distributor; the number of pills sent between 2006 and 2012; the state where their corporate headquarters is located.   
 
 **Task**: Let's look only at shipments sent by the distributor in the answer to the previous question.  Which **single pharmacy location** recieved the most shipments from that distributor.  Produce the code to answer this question in a codeblock below.  
+
+```{r}
+
+
+baltimore%>%
+  group_by(reporter_name,buyer_name,buyer_address1,buyer_city,buyer_state) %>%
+  summarise(pills_per_pharmacy = sum(dosage_unit)) %>%
+  arrange(desc(pills_per_pharmacy))
+
+# BUYER PROFESSIONAL PHARMACY SERVICE, SINAI HOSPITAL BALTIMORE MD with 3352600 PILLS 
+
+```
 
 In a comment inside the codeblock, write the name and address of the buyer and the total number of shipments during the covered period.  What is unique about this pharmacy that might explain the high number of shipments?
 
@@ -126,11 +201,41 @@ In a comment inside the codeblock, write the name and address of the buyer and t
 
 In a comment inside the codeblock, put the name of the entity, the percentage of pills it was responsible for, the total number of pills sent to it and the total number of pills sent to the whole city. 
 
+```{r}
+
+                                             
+options(scipen=999)
+
+baltimore %>%group_by(buyer_name) %>%summarise(pills_per_pharmacy = sum(dosage_unit)) %>%mutate(total_pills = sum(pills_per_pharmacy)) %>%mutate(pharmacy_percent_total_pills = round(((pills_per_pharmacy/total_pills)*100),2))%>%arrange(desc(pharmacy_percent_total_pills))
+
+
+#RITE AID OF MARYLAND, INC. 12.52 % , 16740590	pills per pharmacy, and 133721503 pills total. 
+
+```
+
 **Task**: Being a good data journalist who has worked with messy data, you are skeptical that the percentage you got for the last question -- "RITE AID of MARYLAND INC." -- truly represents all shipments to Rite Aid pharmacies in the city.  
 
 In a codeblock below, copy the function you wrote in your previous answer and add a filter at the end that returns only those records that have "RITE" in the name.  In a comment, explain how many different iterations of Rite Aid there are in this data set.  What prevented them from grouping correctly?  
 
+
+```{r}
+
+                                             
+# options(scipen=999)
+
+baltimore %>%
+  group_by(buyer_name) %>%
+  summarise(pills_per_pharmacy = sum(dosage_unit)) %>%
+  mutate(total_pills = sum(pills_per_pharmacy)) %>%
+  mutate(pharmacy_percent_total_pills = round((pills_per_pharmacy/total_pills*100),2)) %>%
+  arrange(desc(pharmacy_percent_total_pills)) %>%
+  filter(str_detect(buyer_name, "RITE"))
+
+
+```
+
 **Task**: Create a codeblock below that does the following.
+
 
 * Creates a new column in the data set called "rite_aid_y_n".  In that column, make the value say "rite_aid_y" if the buyer_name column indicates the store is a rite aid.  Make the value say "rite_aid_n" if it's not.  
 
@@ -139,6 +244,29 @@ In a codeblock below, copy the function you wrote in your previous answer and ad
 * Calculates the total number of shipments to each group, the total shipments to the city as a whole, and the percentage of total shipments each group is responsible for. 
 
 In a comment inside the codeblock, explain how many total shipments there were to the city, how many and what percentage went to Rite Aid stores. 
+
+```{r}
+#case when  
+
+
+baltimore %>% mutate(rite_aid_y_n= case_when(
+  str_detect(buyer_name, "RITE") ~"rite_aid_y",
+  TRUE  ~"rite_aid_n")) %>%
+group_by(rite_aid_y_n)%>%
+  summarise(pills_per_pharmacy = sum(dosage_unit)) %>%
+  mutate(total_pills = sum(pills_per_pharmacy)) %>%
+  mutate(pharmacy_percent_total_pills = round((pills_per_pharmacy/total_pills*100),2)) %>%
+  arrange(desc(pharmacy_percent_total_pills)) 
+
+
+#total shipments to Rite Aides-116146063 
+#total shipments- 133721503	 
+#what percetnegage went to Rite Aid Stores - 86.86% 
+
+
+```
+
+
 
 **Task**: Create a summary table with the following information:
 
@@ -149,13 +277,150 @@ In a comment inside the codeblock, explain how many total shipments there were t
 
 In a comment, write up your findings.  What information would you use to spur additional reporting? 
 
+```{r}
+
+baltimore%>%
+  filter(drug_name == "HYDROCODONE")%>%
+  mutate(pipeline = paste0(combined_labeler_name," -- ",reporter_name," -- ",buyer_name))%>%
+  group_by(pipeline)%>%
+  summarise(shipments = n(),
+            total_pills = sum(dosage_unit), 
+            avg_pills_per_shipment = mean(dosage_unit),
+            max_pills_in_shipment = max(dosage_unit)
+            ) %>%
+  arrange(desc(max_pills_in_shipment))
+
+
+# if you sort by max_pills_in_shipment there is a shipment of 48000 pills from Actavis Pharma, Inc.to  CARDINAL HEALTH to NEWCARE HOME HEALTH SERVICES. 
+```
+
+
+
+
 **Task**: The discovery, in the previous question, that there was at least one shipment of Hydrocodone from Actavis Pharma to Cardinal Health to NewCare Home Health Services of 48,000 pills prompts you to want to learn more.  On what date did this transactions take place? Write the code you'd use in a codeblock below. In a comment, put the date.
+
+```{r}
+
+baltimore%>%
+  filter(drug_name == "HYDROCODONE")%>%
+  mutate(pipeline = paste0(combined_labeler_name," -- ",reporter_name," -- ",buyer_name,"--",transaction_date))%>%
+  group_by(pipeline)%>%
+  summarise(shipments = n(),
+            total_pills = sum(dosage_unit), 
+            avg_pills_per_shipment = mean(dosage_unit),
+            max_pills_in_shipment = max(dosage_unit)
+            ) %>%
+  arrange(desc(max_pills_in_shipment))
+
+
+# 03/21/2006
+```
 
 ## Further analysis
 
 **Task**: Based on your initial analysis, NewCare Home Health Services seems worthy of additional digging.  You set out to learn as much as you can about their patterns.  Use everything you've learned to get at these or other questions:What were their buying patterns like?  Did they concentrate on buying certain kinds of pills? Were they buying greater numbers of high dose opioids, compared to others? Who made most of the pills they got?  Who distributed them?
 
 Create four separate codeblocks below. Ask and answer at least four separate questions.  
+
+```{r}
+
+#What were their buying patterns like? They generally got most of their pills from Actavis Pharma Inc. 
+
+baltimore%>%
+  group_by(buyer_name,combined_labeler_name,reporter_name) %>%
+  summarise(shipments = n(),
+            total_pills = sum(dosage_unit), 
+            avg_pills_per_shipment = mean(dosage_unit),
+            max_pills_in_shipment = max(dosage_unit)
+            ) %>%
+  arrange(desc(max_pills_in_shipment))%>% filter(buyer_name =="NEWCARE HOME HEALTH SERVICES")
+  
+ 
+
+
+
+```
+```{r}
+
+#who distributed most of their pills? Their pills were generally distributed by ANDA PHARMACEUTICALS INC
+
+
+
+baltimore%>%
+  group_by(buyer_name,reporter_name) %>%
+  summarise(shipments = n(),
+            total_pills = sum(dosage_unit), 
+            avg_pills_per_shipment = mean(dosage_unit),
+            max_pills_in_shipment = max(dosage_unit)
+            ) %>%
+  arrange(desc(total_pills))%>% filter(buyer_name =="NEWCARE HOME HEALTH SERVICES")
+  
+ 
+
+
+
+```
+
+
+```{r}
+
+
+#Did they concentrate on buying certain kinds of pills? 
+
+
+baltimore %>%
+  group_by(buyer_name,drug_name) %>%
+  summarise(shipments = n(),
+            total_pills = sum(dosage_unit), 
+            avg_pills_per_shipment = mean(dosage_unit),
+            min_pills_in_shipment = min(dosage_unit),
+            max_pills_in_shipment = max(dosage_unit)
+            ) %>%
+  arrange(desc(max_pills_in_shipment))%>%filter(buyer_name =="NEWCARE HOME HEALTH SERVICES")
+
+#They concentrated on buying hydrocodone. 
+
+```
+
+
+
+
+```{r}
+#Were they buying greater numbers of high dose opioids, compared to others? Who made most of the pills they got?  Who distributed them?
+
+baltimore %>%
+  group_by(buyer_name,drug_name,dos_str) %>%
+  summarise(shipments = n(),
+            total_pills = sum(dosage_unit), 
+            avg_pills_per_shipment = mean(dosage_unit),
+            min_pills_in_shipment = min(dosage_unit),
+            max_pills_in_shipment = max(dosage_unit)
+            ) %>%
+  arrange(desc(dos_str))
+
+
+
+
+
+#no, other pharmacies such as ABH Pharmacy and Med Supplies were buying more high dose opioids. 
+
+```
+
+
+
+```{r}
+baltimore %>%
+  group_by(buyer_name,drug_name,dos_str) %>%
+  summarise(shipments = n(),
+            total_pills = sum(dosage_unit), 
+            avg_pills_per_shipment = mean(dosage_unit),
+            min_pills_in_shipment = min(dosage_unit),
+            max_pills_in_shipment = max(dosage_unit)
+            ) %>%
+  arrange(desc(dos_str))%>%filter(buyer_name =="NEWCARE HOME HEALTH SERVICES")
+```
+
+```
 
 ## Output
 

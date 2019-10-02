@@ -549,7 +549,7 @@ mingo %>%
   group_by(buyer_name) %>%
   summarise(pills_per_pharmacy = sum(dosage_unit)) %>%
   mutate(total_pills = sum(pills_per_pharmacy)) %>%
-    mutate(pharmacy_percent_total_pills = round(((pills_per_pharmacy/total_pills)*100),2)) %>%
+  mutate(pharmacy_percent_total_pills = round(((pills_per_pharmacy/total_pills)*100),2)) %>%
   arrange(desc(pharmacy_percent_total_pills))
 ```
 
