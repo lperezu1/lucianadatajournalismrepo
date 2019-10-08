@@ -1,0 +1,360 @@
+---
+title: "Class_05 | In-Class Assignment | R Continued"
+author: "Sean Mussenden"
+date: "10/8/2019"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE, paged.print=TRUE)
+```
+
+## Objective
+
+The purpose of this in-class assignment is to build on the information you learned in last week's in-class lab:
+
+* Writing R code for data analysis and exploration in the R Studio environment, using R projects (.Rproj) and R markdown files (.Rmd).  
+* Loading, cleaning, making sense of and analyzing data using the Tidyverse framework of packages by selecting certain columns, sorting and filtering
+* Create new columns in our data set based on information in other columns.   
+* Summarizing data by grouping and calculating min, max, median and mean values.    
+* Store changes on GitHub.
+* Learn how to join together two related data sets on a common field to perform a new kind of analysis, and discuss common problems that arise when doing joins.  
+ 
+## Tasks, Turning it In, Getting Help
+
+At several points throughout this document, you will see the word **Task**.  
+
+This indicates that you need to do something, generally creating a code block and writing custom code.  
+
+When you are finished, you should save your R markdown file and Knit it as an HTML file.
+
+Upload links to your GitHub folder on ELMS. 
+
+Need help?  You are welcome to do the following things:
+
+* Refer to the previous week's lab.
+* Use Google or search Stack Overflow. Try searching for your error message or translating your problem into basic terms.
+* Check out the excellent [R for Data Science](https://r4ds.had.co.nz/index.html)
+* Take a look at the [Cheatsheets](https://www.rstudio.com/resources/cheatsheets/) and [Tidyverse documentation](https://www.tidyverse.org/).
+  * [RStudio cheatsheet](https://www.rstudio.com/resources/cheatsheets/#ide)
+  * [Readr and Tidyr cheatsheet](https://github.com/rstudio/cheatsheets/raw/master/data-import.pdf) and [Readr documentation](https://readr.tidyverse.org/) and [Tidyr documentation](https://tidyr.tidyverse.org/reference/index.html).
+  * [Dplyr cheatsheet](https://github.com/rstudio/cheatsheets/raw/master/data-transformation.pdf) and [Dplyr documentation](https://dplyr.tidyverse.org/)
+  * [Lubridate cheatsheet](https://rawgit.com/rstudio/cheatsheets/master/lubridate.pdf) and [Lubridate documentation](https://lubridate.tidyverse.org/).
+  * [GitHub desktop help](https://help.github.com/en/desktop/getting-started-with-github-desktop)
+* After you've spent 5 minutes trying to solve the problem on your own, ask your neighbor and if they don't know, ask me!
+
+## Setup
+
+Take the following steps to set up your document:
+
+1. Download the ZIP file and open the folder inside of your GitHub class assignments folder. It should contain this document, class_05.Rmd, and a data folder with several CSVs.
+2. Open this file in RStudio.
+3. Rename this file "class_05_FIRSTNAME_LASTNAME.Rmd".
+4. Create a new R project inside of this folder, which will set the working directory in this folder.   
+
+## Load Packages
+
+**Task**: Create a code block below, and load the packages you'll need for this exercise.  That's the tidyverse, janitor and lubridate.
+
+```{r}
+
+
+library(tidyverse)
+
+library(lubridate)
+
+library(janitor)
+
+
+```
+
+## Load Data
+
+For this exercise, we will be working with a small subset of the DEA's ARCOS database, which documented shipments of 76 billion opioid pills between 2006 and 2012, during the peak of the opioid epidemic. 
+
+The data was obtained after a lengthy legal battle by the Washington Post and the Charleston Gazette-Mail, and released by the Washington Post in raw and aggregated form. [Washington Post "Digging into the DEA's pain pill database" page](https://www.washingtonpost.com/graphics/2019/investigations/dea-pain-pill-database/).
+
+A data dictionary is available here: [ARCOS Registrant Handbook](https://www.deadiversion.usdoj.gov/arcos/handbook/full.pdf).
+
+We will be loading in three different data sets today.  The data was obtained by me from the Washington Post's [ARCOS R package](https://cran.r-project.org/web/packages/arcos/readme/README.html), which allows you to easily download larger and more interesting slices of the data than what's available using the web interface.  We'll work with this package in future classes. 
+
+Here's the data we'll be using, all in the data folder
+
+1. buyer_addresses.csv - one record per "buyer" in the United States -- pharmacies and practitioners, typically -- with information about name, address and location, along with a unique id "buyer_dea_no".
+2. buyer_totals.csv - one record per buyer, listing the total number of pills sent to that buyer overall between 2006 and 2012.  The only specific identifying information is a unique id, "buyer_dea_no", but the buyer county and buyer state is there.
+3. buyer_annual_by_year - one record per buyer per year, listing the total number of pills sent to that buyer in one year, between 2006 and 2012.  Some buyers have seven records, one for each year between 2006 and 2012, while others have fewer.  The only specific identifying information is a unique id, "buyer_dea_no", but the buyer county and buyer state is there.
+4. state_population_per_year - average annual population for each state between 2006 and 2012. 
+
+**Task**: Create a code block below, and write and execute the function to load in the data.  Store each one as an object that is the same as the file name (without .csv, of course). Write a comment describing what you are doing.  
+
+```{r}
+
+# Load data and store it as an object
+
+buyer_addresses <- read_csv("data/buyer_addresses.csv")
+
+
+buyer_totals <- read_csv("data/buyer_totals.csv")
+
+
+buyer_annual_by_year <- read_csv("data/buyer_annual_by_year.csv")
+
+
+state_population_per_year <- read_csv("data/state_population_per_year.csv")
+
+
+
+
+```
+
+
+
+## Examine the Data
+
+Now that the data is in, spend some time examining it to get a sense of it using the functions we reviewed previously. These data checks should be routine for you at this point. What information does it contain? What is missing? Are values stored in strange formats?
+
+**Task** Answer the following question in a comment in a code block below.  Look at the data.  The three data sets describe similar things -- buyers -- but have different numbers of records? What's your best guess for why the number of records buyer_annual_by_year is higher than buyer_totals?  What about your best guess for why buyer_addresses is higher than buyer_totals?  
+
+```{r}
+
+#buyer annual per year- 615438	is higher because it shows the record per buyer for the 7 years. 
+
+# buyer totals 148597  - only has one record per buyer which represenes the total number of pills sent to that buyer overall between 2006 and 2012. 
+
+# buyer addresses has - 278697. It is higher than buyer totals  - one record per "buyer" in the United States -it could be higher if a pharmacy has more than one locatoini but with same dea number. 
+
+
+``` 
+
+## Analysis
+
+**Task**: What is the name and location of the pharmacy that had the most pills sent to it in total? Do some web research and offer your best guess, which you could use as a jumping off point for further reporting, as to why this pharmacy might have so many.
+
+```{r}
+
+#in buyer totals- BO5539347	RETAIL PHARMACY	CHARLESTON	SC	512414034 pills total 
+
+#address - VA CMOP	NORTH CHARLESTON	SC	29405	CHARLESTON
+
+#VA CONSOLIDATED MAIL OUTPATIENT PHARMACY
+
+
+# mail-order pharmacy run by the Department of Veterans Affairs . According to the Washington Post "Nearly all of the opioids prescribed to VA patients in the United States between 2006 and 2012 stopped at this North Charleston warehouse before the VA shipped them to veterans’ doorsteps and mailboxes, newly released federal data shows".
+
+#https://www.postandcourier.com/health/millions-of-opioid-pills-passed-through-sc-as-drug-makers/article_689d66aa-b480-11e9-865d-7fae216b13af.html 
+
+
+```
+
+
+**Task**: What is the name of the practitioner in Maryland that had the most totals pills **in 2010**? How many total pills did the doctor have, compared to the next highest doctor in the state that year? Use the Maryland state physician board lookup tool to find any disciplinary actions taken against this doctor: https://www.mbp.state.md.us/bpqapp/. Do a brief writeup of what you find.  Also answer this question: how would ensure that the doctor you find on the state board lookup tool is the same doctor described in this data. 
+
+```{r}
+
+# in buyer totals -most pills in 2010 Maryland practictioner- filter by 2010 and maryland / name of practitioner 
+
+#join buy buyer dea number 
+
+#arragnge descending y dosage unit 
+
+
+maryland_practitioner_pills_2010 <-buyer_annual_by_year%>%
+  inner_join(buyer_addresses, by="buyer_dea_no")
+
+
+``` 
+
+```{r}
+maryland_practitioner_pills_2010 %>%
+  select(buyer_dea_no,buyer_bus_act.x,buyer_name,buyer_state.x,year,dosage_unit)%>%
+  filter(buyer_bus_act.x== "PRACTITIONER", year== "2010",buyer_state.x=="MD")%>%arrange(desc(dosage_unit))
+
+# MATHUR, RAKESH K MD with 337450 pills. Most recent action shows her suspension terminated and that Probationary terms and conditions remain. The Board found that Rakesh had satisfied the fine imposed dated July 27, 2012.   
+
+```
+
+**Task**: Which state had the highest rate of total pills per person sent to it over the 2006 to 2012 period?
+
+```{r}
+
+# summarize how many pills were sent to each state- 
+
+buyer_totals %>%
+  inner_join (state_population_per_year, by = "buyer_state") %>%
+  group_by(buyer_state, population_average) %>%
+  summarise(total_pills_per_state = sum(total_pills)) %>% 
+  mutate(avg_yearly_pills_per_state = total_pills_per_state/population_average)%>%arrange(desc(avg_yearly_pills_per_state))
+
+#WV 
+
+
+
+```
+
+
+**Task**: Are there any buyers included in the buyer_totals table that ARE NOT included in the buyer_addresses table?  Write code in the codeblock below that will help you figure out the answer to this question. Write comments that explain what you're doing. 
+
+Here's how I'd proceed, in order:
+
+1.  Do an inner join of buyer_totals to buyer_addresses. Remind yourself: what does an inner join do? Look at the number of records. How many are there? 
+2.  Now, a left join of buyer_totals to buyer_addresses. Ask yourself: what does a left join do? How does it differ from an inner join. Look at the number of records returned in the table.  How many are there? Think through the logic: what **might** it mean when the number of records from an inner join and a left join are the same?
+3.  Now, do a left join of buyer_totals to buyer_addresses.  But this time, add a filter so you only get back records where the buyer_address1 field has missing values (na).  You can use the is.na() function inside of a filter, like so: is.na(buyer_address1).  How many records are returned.  Think through the logic: what does it mean that 0 rows are returned when you do this? 
+4.  Lastly, try using a type of join I alluded to in the video, but didn't explicitly show you: [anti_join](https://dplyr.tidyverse.org/reference/join.html).  This method return all rows from the buyer_totals table where there is not a matching value in the buyer_addresses table.  It's a tidier way of doing the thing we just did in the last query.  Think through the logic: what does it mean that 0 rows are returned when you do this?
+
+```{r}
+
+buyer1 <- buyer_totals %>%inner_join(buyer_addresses, by="buyer_dea_no")
+
+#148831	 totals 
+  
+```
+
+```{r}
+
+  buyer2 <- buyer_totals %>%
+  left_join(buyer_addresses, by="buyer_dea_no")
+
+#148831 total 
+# it might mean that the dataset in regards to addresses is complete 
+
+
+```
+
+```{r}
+
+buyer3 <- buyer_totals %>% left_join(buyer_addresses, by="buyer_dea_no")%>%filter(buyer_address1 =="na")
+
+
+# How many records are returned.  Think through the logic: what does it mean that 0 rows are returned when you do this? - this means that there are no values of na in the buyer address, which means all columns have an address. 
+
+
+```
+
+
+```{r}
+
+  antijoin <- buyer_totals %>%
+  anti_join(buyer_addresses, by="buyer_dea_no")
+
+#0 returns rows in buyer_totals table where there is not a matching value in the buyer_addresses table. Therefore addresses are complete 
+``` 
+
+
+
+
+**Task**: Are there any buyers included in the buyer_addresses table that ARE NOT included in the buyer_totals table?  Write code in the codeblock below that will help you figure out the answer to this question. Write comments that explain what you're doing that think through the logic. You can use similar methods as in the last question to solve the problem.
+
+```{r}
+
+innerjoin <-buyer_addresses %>%inner_join(buyer_totals, by="buyer_dea_no")
+
+#148831	 totals
+  
+```
+
+
+```{r}
+
+#left join is 278715 - difference of 129,884 - that means that there are 148,831 values that have addresses and total pills, but 129,884 rows that have adresses but no totals. 
+
+buyer4 <- buyer_addresses %>% left_join(buyer_totals, by= "buyer_dea_no")
+
+```
+
+```{r}
+
+
+#buyerleftfilter <- buyer_addresses %>% left_join(buyer_totals, by= "buyer_dea_no")%>%filter(buyer_totals =="na")
+
+#result must have length 278715 not 742985 error ? 
+
+
+
+```
+
+
+
+
+```{r}
+#anti join is 129844. Antijoin returns rows in buyer_adressess table where there is not a matching value in the buyer_totals table. Therefore totals are likely not complete by 129884. 
+
+antijoin2 <- buyer_addresses %>%
+  anti_join(buyer_totals, by="buyer_dea_no")
+
+
+``` 
+
+
+```{r}
+
+rm(list = ls())
+
+```
+
+## Your own questions
+
+**Task**: We have been building all semester towards our final analysis project, where you will try to find an interesting story in the opioid data released by the post, using larger and larger slices of the data each time. 
+
+Use the rest of this lab as an opportunity to explore this national slice of buyer data with an eye to trying to identify trends, examples and other interesting facts that you might want to dig deeper on later in the semester.  
+
+Create and answer at least four codeblocks, using any of the techniques we've learned in this class up to this point.  You can also load in additional data if you like. 
+
+
+
+```{r}
+
+#Accoring to analysis above, WV had the highest rate of total pills per person sent to it over the 2006 to 2012 period
+ 
+
+#Buyer_Address_annual_by_year <-buyer_addresses %>% inner_join (buyer_annual_by_year, 3by="buyer_dea_no")
+
+```
+
+
+```{r}
+#Buyer_Address_annual_by_year <- Buyer_Address_annual_by_year %>% select(buyer_dea_no, buyer_bus_act.x, buyer_name, buyer_address1, buyer_city, buyer_county.x, buyer_state.x, buyer_zip, buyer_county.x, year,dosage_unit)%>% filter(buyer_state.x=="WV")%>%arrange(desc(dosage_unit)) 
+
+
+```
+
+
+```{r}
+#print(Buyer_Address_annual_by_year)
+
+#apart from Logan and Mingo, Greenbrier got quite a few pills in 2010 and 2011.
+
+#BM8273524	RETAIL PHARMACY	FRITZ'S PHARMACY AND WELLNESS	8706 SENECA TRAIL S	RONCEVERTE GREENBRIER 2010- 1356800.0
+
+# BM8273524	RETAIL PHARMACY	FRITZ'S PHARMACY AND WELLNESS  706 SENECA TRAIL S	RONCEVERTE GREENBRIER - 2011 - 1308700.0  
+```
+
+
+```{r}
+#Greenbrier has some high dosages of pills in 2010 and 2011 ,see per year in for Greenbrier 
+
+#greenbrier <- Buyer_Address_annual_by_year%>%filter(buyer_county.x=="GREENBRIER")%>%arrange(year)
+
+#print(greenbrier)
+
+``` 
+
+```{r}
+
+
+# summarize how many pills were sent to each county- not sure how I would do this? also would like to see populaion per county. 
+
+
+```
+
+## Output
+
+**Task**: Spellcheck your document in R Studio.  Save your file.  Knit it to an HTML document, making sure it compiles.  Open it in a browser to be sure. Push your changes to GitHub, and go to GitHub.com to make sure your changes got up to the browser. 
+
+
+## Submission
+
+**Task**: On ELMS, post link to GitHub to the R Markdown file and html file. 
