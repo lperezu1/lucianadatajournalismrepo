@@ -36,4 +36,20 @@ vignettes/*.pdf
 rsconnect/
 
 #ignore .DS_Store files
-.DS_store 
+.DS_store
+
+#ignore
+Class_assignments/class_04/data/arcos-md-baltimore-city-24510-itemized.tsv
+Class_assignments/class_05/data/buyer_addresses.csv
+Class_assignments/class_05/data/buyer_annual_by_year.csv
+Class_assignments/class_05/data/buyer_totals.csv
+Class_assignments/class_05/data/state_population_per_year.csv
+Class_assignments/class_06/data/buyer_addresses.csv
+Class_assignments/class_06/data/buyer_annual_by_year.csv
+Class_assignments/class_06/data/buyer_totals.csv
+Class_assignments/class_06/data/state_population_per_year.csv
+labs/lab_05/data/arcos-wv-mingo-54059-itemized.tsv
+labs/lab_05/data/county_pills_per_year.csv
+labs/lab_05/data/county_population_per_year.csv
+labs/lab_05/data/mingo_buyer_addresses.csv
+labs/lab_05/data/mingo_buyer_per_year.csv
