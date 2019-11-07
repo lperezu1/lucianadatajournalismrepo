@@ -101,6 +101,8 @@ There is one record (row or observation) per transaction (a shipment from a manu
 
 # Load data and store it as an object called mingo
 
+
+
 mingo<-read_tsv("data/arcos-wv-mingo-54059-itemized.tsv")
 
 ```
