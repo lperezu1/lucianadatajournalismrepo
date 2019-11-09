@@ -40,9 +40,160 @@ PT.2 comparison of long-term opioid prescriptions (specialties prescribing pract
 
 Pt.3 will inner join counties zip codes in WV with zip codes of prescribers to see if there is a location with high pills per person / and high dosages sent out by prescribers - not too sure how to do this. 
 
+
 Pt.4  Demographics- overview of demographics breakdown/ gender/ poverty level of Medicare users in 2013. 
 
 - some other questions - 
+
+
+JOIN  - 
+
+opioid claims per 65+ by zipcode vs pills per person rate by zipcode (arcos)
+Join by zipcode
+test to see if there is any pattern. 
+
+```{r}
+
+medicare_opioids_zip_count <- medicare_edited %>% group_by(nppes_provider_zip_code) 
+  
+```
+
+
+```{r}
+# Define API Key
+census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
+
+# If you need to look up variables, this is how you do it
+acs_variables <- load_variables(2013, "acs5" )
+
+```
+
+
+```{r}
+#get female and males medicare and group into one sum of population by medicare (zctas)
+# 10 is male medicare over 65+ / 20 is female medicare over 65+
+
+
+estimate_total_medicare_male <- get_acs(geography = "county",
+              variables = "C27006_010") 
+
+
+estimate_total_medicare_female <- get_acs(geography = "county",
+              variables = "C27006_010")
+
+
+acs_zcta_medicare_pivot <- get_acs(geography= "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
+  select(-moe)%>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(GEOID,NAME, total_medicare)
+```
+
+```{r}
+
+# join two together (medicare + population)
+
+medicare_population_opioids_zip <-medicare_opioids_zip_count %>%
+  inner_join(acs_zcta_medicare_pivot, by=c ( "nppes_provider_zip_code" = "GEOID"))%>%
+  filter (total_medicare ! =0, total_opioids_)
+
+```
+
+```{r}
+
+```
+
+
+
+
+```{r}
+# load arcos and clean names 
+arcos_ <-arcos_wv  %>%
+  clean_names()
+
+```
+
+```{r}
+
+# pills 
+
+#pills_all_years <-
+
+ WV_pills_2012 <- arcos_wv %>% 
+  filter(year=="2012") %>% select( buyer_state, buyer_county , buyer_zip , dosage_unit )
+
+
+
+# population 2012 
+
+WV_population_2012 <-  WV_population_2012  %>% select(buyer_state, buyer_zip, countyfips, population, year) %>% filter(year =="2012")
+
+
+```
+
+
+```{r}
+#anti join to see which one are not in arcos zip code pills 
+#WV_pills_2012 has 
+#WV_population_2012 has  
+
+# how many records in our population table without a zip code match in our pills table
+not_in_pills_2012 <- WV_population_2012 %>%
+  anti_join(WV_pills_2012, by=c("zipcode")) 
+
+#not year match as all are 2012 
+
+#  records in our pills table without a zipcode match in population table.  
+not_in_population_2012 <- WV_pills_2012 %>%
+  anti_join(WV_population_2012, by=c("zipcode"))
+
+``` 
+
+```{r}
+
+zipcode_pills_2012_per_person_WV <- WV_pills_2012 %>%
+  left_join(WV_population_2012, by = c("zipcode", "buyer_county","buyer_state"))%>%  
+  mutate(pills_per_person = dosage_unit/population) 
+
+
+```
+
+``` {r}
+
+zipcode_pills_2012_per_person_WV %>% filter(pills_per_person > 100)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 PT 1. 
 
@@ -80,6 +231,8 @@ medicare_edited <- Medicare_Part_D_Opioid_Prescriber_2013%>%
   print(medicare_edited)
 
 
+```
+
 
 # Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
 
@@ -94,7 +247,15 @@ medicare_edited <- subset(medicare_edited, !(nppes_provider_state %in% c("XX" ,"
 
 ```{r}
 
-table(medicare_edited$nppes_provider_state) 
+table(medicare_edited$nppes_provider_state)
+
+medicare_edited %>%
+  group_by(nppes_provider_state) %>%
+  summarise(total_claims = sum(total_claim_count),
+            total_opioid_claims = sum(opioid_claim_count),
+            long_acting_opioid_claim_count = sum(long_acting_opioid_claim_count),
+            short_acting_opioid_claim_count) %>%
+  mutate(pct_opioid_claims = total_opioid_claims/total_claims)
 
 #FL/ CA/ OH / PA shows up the most. 
 
@@ -425,85 +586,8 @@ high_prescribing_long_term_doctors <- medicare_edited %>%
 ```
 
 
-PT.3 
-
-## Load Shapefiles
-
- [TIGER](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) where you can get a lot.  
-
-First, we need to store our API Key. You can use mine for now, but best to [get your own](https://api.census.gov/data/key_signup.html).
-
-```{r}
-# Define API Key
-census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
-
-# If you need to look up variables, this is how you do it
-acs_variables <- load_variables(2013, "acs5" )
-
-```
-
-```{r}
-
-oh_state_geodata_shifted <- get_acs(geography = "state",
-              variables = "B01001_001", geometry = TRUE, shift_geo = TRUE) %>%filter(NAME == "Ohio")
 
 
-
-print(oh_state_geodata_shifted)
-
-
-```
-
-```{r}
-oh_state_geodata_shifted <- get_acs(geography = "state",
-              variables = "B01001_001", geometry = TRUE, shift_geo = TRUE) %>%filter(NAME == "Ohio")
-``` 
-
-```{r}
-oh_innerjoin <-oh_state_geodata_shifted %>%inner_join(oh_medicare, by="")
-
-``` 
-
-
-```{r}
-oh_state_geodata_shifted %>%
-  ggplot(aes(fill = estimate)) +
-  geom_sf()
-
-# Turn off scientific notation if your legend looks weird
-
-options(scipen=999)
-
-```
-
-Ohio data
-
-```{r}
-
-oh_medicare <- medicare_edited %>% filter(nppes_provider_state == "OH")
-
-
-``` 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-PT.3  
 
 Load Arcos WV raw data and connect to medicare data via zipcode to see if there is a zip code with high pills per person and a high count prescriber (so has high dosages of opioids sent out %)
 
@@ -513,115 +597,6 @@ Load Arcos WV raw data and connect to medicare data via zipcode to see if there 
 15. what zip codes had most pills sent to it and had high prescriptions filled? Is there a trend? in a specific county? or by a specific field / provider? 
 
 16. are locations where most pills were sent to urban/ suburban ? population breakdown of these locations. 
-
-
-
-```{r}
-#arcos key 
-
-# store one of our API keys as an object called key
-key <- "uO4EK6I"
-```
-
-```{r}
-WV <- total_pharmacies_state(state="WV", key="uO4EK6I")
-
-
-``` 
-
-
-```{r}
-
-# load raw dat for oh arcos and clean names 
-
-
-wv<- read_tsv ("input_data/oh.tsv") %>% print (wv)
-
-
-```
-
-
-
-```{r}
-# load arcos and clean names 
-arcos_wv <-arcos_wv  %>%
-  clean_names()
-
-```
-
-```{r}
-
-# pills 
-
-#pills_all_years <-
-
- WV_pills_2012 <- arcos_wv %>% 
-  filter(year=="2012") %>% select( buyer_state, buyer_county , buyer_zip , dosage_unit )
-
-
-
-# population 2012 
-
-WV_population_2012 <-  WV_population_2012  %>% select(buyer_state, buyer_zip, countyfips, population, year) %>% filter(year =="2012")
-
-
-```
-
-
-```{r}
-#anti join to see which one are not in arcos zip code pills 
-#WV_pills_2012 has 
-#WV_population_2012 has  
-
-# how many records in our population table without a zip code match in our pills table
-not_in_pills_2012 <- WV_population_2012 %>%
-  anti_join(WV_pills_2012, by=c("zipcode")) 
-
-#not year match as all are 2012 
-
-#  records in our pills table without a zipcode match in population table.  
-not_in_population_2012 <- WV_pills_2012 %>%
-  anti_join(WV_population_2012, by=c("zipcode"))
-
-``` 
-
-```{r}
-
-zipcode_pills_2012_per_person_WV <- WV_pills_2012 %>%
-  left_join(WV_population_2012, by = c("zipcode", "buyer_county","buyer_state"))%>%  
-  mutate(pills_per_person = dosage_unit/population) 
-
-
-```
-
-``` {r}
-
-zipcode_pills_2012_per_person_WV %>% filter(pills_per_person > 100)
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 PT.4  

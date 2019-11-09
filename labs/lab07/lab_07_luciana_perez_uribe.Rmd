@@ -210,11 +210,7 @@ First, lets pull in county and state.  The "variable" here is just a count of to
 
 ```{r}
 
-county_geodata <- get_acs(geography = "county",
-              variables = "B01001_001", geometry = TRUE)
 
-state_geodata <- get_acs(geography = "state",
-              variables = "B01001_001", geometry = TRUE)
 
 ```
 
