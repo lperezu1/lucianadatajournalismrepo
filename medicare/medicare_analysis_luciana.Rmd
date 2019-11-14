@@ -117,8 +117,7 @@ medicare_edited %>%
 # Louis Jacobsen- WA -607 opiods or 99.84% anesthesiology 
 #Michael Kostenko - WV - family practice 152 or 98.06% 
 # Lance Ottinger- IN - 180 opioids - 97.30 % nurse practitioner 
-
-
+# Patricia Borst- 	Nurse Practitioner with  1159 opioids dispensed - 96.02	% prescribing rate 
 ```
 
 
@@ -130,15 +129,15 @@ medicare_edited %>%
   arrange(desc(opioid_claim_count, opioid_prescribing_rate)) %>%
   filter(opioid_prescribing_rate>90)
 
-# nurse practionter rate of	96.02	 
+# nurse practionter rate of	96.02	 patricia borst 
 #podiatry ? very high rate ? 
 
-# high rates (above 90%) and high amounts dispensed - in OH by John Beresh - 
-#Thomas Brummett- IL - 	Interventional Pain Management 
-# Andrzej Zielke - PA - 	Anesthesiology 
+# high rates (above 90%) and high amounts dispensed - in OH by John Beresh - anesthesiology 
+#Thomas Brummett- IL - 	Interventional Pain Management - IL 
+#Andrzej Zielke - PA - 	Anesthesiology 
 ```
 
-5. what professions have highest opioid dosage rate?  - When you join total specialties in a field (speciality_types) and specialists who prescribe high dosages of opioids (high_prescribing_doctors) (so above 50%) you  see some high rates are interventional pain management, pain management and orthopedic surgery. Do these professions require high opioid dosages, or if there is another reason? Why such high prescription rates? 
+5. What professions have highest opioid dosage rate?  - When you join total specialties in a field (speciality_types) and specialists who prescribe high dosages of opioids (high_prescribing_doctors) (so above 50%) you  see some high rates are interventional pain management, pain management and orthopedic surgery. Do these professions require high opioid dosages, or if there is another reason? Why such high prescription rates? 
 
 highlights- 
 
@@ -146,7 +145,7 @@ highlights-
 
 - family practice with 155 claim count but 98.06% are opioids
  
-- 	Nurse Practitioner	1207 claim count 96.02% opiods  ? 	4 	47711 - Patricia Borst 
+- 	Nurse Practitioner	1207 claim count 96.02% opiods  ? Patricia Borst 
 
 articles that speak on  https://scienceofcaring.ucsf.edu/research/nps-and-opioid-prescribing-what-don’t-we-know  - "The information matters because nurse practitioners (NPs) account for the third-largest share of opioids prescribed in primary care, the practice setting that accounts for the largest percentage of opioid prescriptions in the U.S. In rural areas – where NPs are often the only primary care providers providing services to vulnerable populations – the opioid epidemic has been particularly fast-growing." 
  -  https://www.ncbi.nlm.nih.gov/pubmed/25896191
@@ -154,6 +153,11 @@ articles that speak on  https://scienceofcaring.ucsf.edu/research/nps-and-opioid
 
 6 - why are there outliers such as nurse practitioners or family doctors (certain practices) that have such high opioid prescribing rates when overall this field does not prescribe much opioids? look at these specific cases. Considering that these professions have a low rate (nurse = 0.015 and family medicine is 0.004 or 3 out of 635 prescribed very high , why?  )
 
+ Speciality_prescriptions_join is a join between total specialities in a field (speciality_types) and specialists who prescribe high dosages of opioids (high_prescribing_doctors) (so above 50%). When you do this join you can see some high rates are interventional pain managment, pain management and orthopedic surgery. 
+ 
+ Would have to see if these professions require high opioid dosages, or if there is another reason. 
+ 
+ Futhermor certain individual prescribers ( such as nurse practioner and family doctos) have high opioid prescriptions while their overall field has low prescribing rates (nurse = 0.015 and family medicine is 0.004 or 3 out of 635 prescribed very high).
 
 ```{r}
 #total speciality types 
@@ -181,30 +185,11 @@ high_prescribing_doctors <- medicare_edited %>%
   
   print(speciality_prescriptions_join)
   
-  
- #speciality_prescriptions_join is a join between total specialities in a field (speciality_types) and specialists who prescribe high dosages of opioids (high_prescribing_doctors) (so above 50%). When you do this join you can see some high rates are interventional pain managment, pain management and orthopedic surgery. 
- 
- #Would have to see if these professions require high opioid dosages, or if there is another reason. 
- 
- #futhermore, would be interesting to look at individual prescribers ( such as nurse practioner and family doctos) and find outliers of high prescriptions, considering that these professions have a low rate (nurse = 0.015 and family medicine is 0.004 or 3 out of 635 prescribed very high , why?  )
 
 ```
 
-
-7. Are there any outliers in practicers that have high opioid prescribing rates when overall field is low ?
-
-```{r}
-
-medicare_edited %>% 
-  arrange (desc(opioid_claim_count))%>%
-  filter(opioid_claim_count>100, opioid_prescribing_rate > 96)
-
-# Patrica Borst  47711 IN 	Nurse Practitioner 
-
-```
  
-
-8. Which states prescribed the most opioids? 
+7. Which states prescribed the most opioids? 
 
 Join- 
 how to get state abbreviation or state to show up as name? if not join will not work. 
@@ -214,20 +199,21 @@ how to get state abbreviation or state to show up as name? if not join will not 
  
 medicare_opioids_state_2013 <- medicare_edited %>% 
   group_by(nppes_provider_state) %>%
-  summarise(total_opioids_2013 = n()) %>% arrange(desc(total_opioids_2013)) %>% abbr2state(abbr) %>% print(medicare_opioids_state)
+  summarise(total_opioids_2013 = n()) %>% arrange(desc(total_opioids_2013)) %>%  print(medicare_opioids_state)
 
 # CA	109563 
 # NY	85841 
-# TX	64950  
+# TX	64950 
+#FL 61029 
 
 ```
 
 9. high prescribers in CA, NY and TX ? Why do these states have such high dosages compared to other states? Especially CA?
  
 ```{r}
-medicare_edited %>% filter (nppes_provider_state == "CA") %>% arrange(desc(opioid_claim_count))
-
+medicare_edited %>% filter (nppes_provider_state == "CA") %>% arrange(desc(opioid_claim_count)) 
 ```
+
 
 ```{r}
 medicare_edited %>% filter (nppes_provider_state == "NY") %>% arrange(desc(opioid_claim_count))
@@ -237,13 +223,204 @@ medicare_edited %>% filter (nppes_provider_state == "NY") %>% arrange(desc(opioi
 medicare_edited %>% filter (nppes_provider_state == "TX") %>% arrange(desc(opioid_claim_count))
 ```
 
+8. Which zip codes had most prescriptions sent to it? are these the same as the states with most opioids? 
 
-10. how would I group by long term and short term opioids as well? I would like to compare opioids short -term / long -term sent out in a map, as according to certain research long-acting-opioids is not beneficial. Ive tried and it is not grouping properly. 
+```{r}
 
+medicare_high_opioids_zips <- medicare_edited %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(opioids = n()) %>% 
+  arrange(desc(opioids)) %>% 
+  print(medicare_high_opioids_zips)
+
+# zip code- 77030 in TX (So Texas yes- Texas had 	64950 opioids sent to it ) - who is prescribing in this zip code? 
+# zip code MN 55905 - 2742 ..etc. 
+
+
+# https://www.drugabuse.gov/opioid-summaries-by-state/texas-opioid-summary says Texas (not medicare had some of the lowest opioid death rates , as well as opioid prescriptions below national average)
+
+# TX	64950 
+
+
+``` 
+
+```{r}
+medicare_edited %>% filter (nppes_provider_zip_code == 77030) %>% arrange(desc(opioid_claim_count))
+
+``` 
+
+
+
+10. how would I group by long term and short term opioids as well? I would like to compare opioids short -term / long -term sent out in a map, as according to certain research taking long-acting-opioids is not beneficial. Ive tried and it is not grouping properly. 
+
+
+```{r}
+
+# showing same as normal opioids :( 
+
+medicare_high_long_acting_opioids_zips <- medicare_edited %>% 
+  arrange(desc(long_acting_opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(long_acting_opioids = n()) %>% 
+  arrange(desc(long_acting_opioids)) %>% 
+  print(medicare_high_long_acting_opioids_zips)
+
+
+
+
+``` 
+
+
+
+```{r}
+
+# showing same as normal opioids :( 
+
+medicare_short_acting_opioids_zips <- medicare_edited %>% 
+  arrange(desc(short_acting_opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(short_acting_opioids = n()) %>% 
+  arrange(desc(short_acting_opioids)) %>% 
+  print(medicare_short_acting_opioids_zips)
+
+```
+
+
+
+PART 2- 
+
+Long- acting Opioids -
+
+WOULD LIKE TO COMPARE LONG TERM OPIOID TREND WITH SHORT-TERM OPIOID TREND /// comparison of 2013 to 2017 to see if long actin gopioids have increased, as well as overall opioids increased. 
+
+The number of Medicare Part D opioid drug claims that are considered long-acting, including original prescriptions and refills. For a list of drugs that include long-acting opioids, visithttps://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Medicare-Provider-Charge-Data/Downloads/OpioidDrugList.zip.
+
+
+What are long acting opioids? ( long_acting_opioid_claim_count field in database) 
+
+Long-acting opioid -  https://www.drugabuse.gov/sites/default/files/files/CommonlyUsedLAOpioids.pdf
+
+https://www.cdc.gov/vitalsigns/opioids/index.html - the CDC states : " Taking opioids for longer periods of time or in higher doses increases the risk of addiction, overdose, and death." 
+
+
+Examples of long-acting opioids
+Fentanyl patch (Duragesic)
+Methadone (Dolophine)
+Morphine (Kadian)
+Oxycodone controlled-release (OxyContin)
+(https://www.uofmhealth.org/health-library/abo7833)
+
+https://www.ajmc.com/journals/supplement/2015/ace0029_aug15_painrems/ace0029_aug15_painrems_ray 
+
+Opioid Claims: The number of Medicare Part D opioid drug claims, including original
+prescriptions and refills.
+• Long-Acting Opioid Claims: The number of Medicare Part D opioid drug claims that are
+considered long-acting, including original prescriptions and refills
+• Opioid Prescribing Rate: The number of Opioid Claims divided by the Overall Claims and
+multiplied by 100.
+                  
+• Long-Acting Opioid Prescribing Rate: The number of Long-Acting Opioid Claims divided by the Opioid Claims and multiplied by 100.
+
+
+-  Comparison of rate of opioid use to long-term use opioids in 2013 
+-  who prescribes the most long term opioids - what field ?
+-  any outliers in long -term opioids prescribed? 
+- comparing death rates to long term opiods used in states, do they go up compared to overall trend? 
+
+Tried to groupby long /short acting opioids to compare to overall trend 
+
+- are long term opioids sent to locations same ones as normal rate? 
+
+```{r}
+
+medicare_edited %>% 
+  arrange(desc(long_acting_opioid_prescribing_rate)) %>%
+  filter(long_acting_opioid_claim_count>100)
+
+#rey ximenes- TX- 
+# 5 practitioners in PA are among high opioid prescriber above 100 opioiids dispensed - 2 of them seem to be related Lodico but work in different department Anesthesiology and interventional pain management 
+# louis jacobsen - in WA also amongst high long term prescribers  
+
+
+```
+
+
+```{r}
+
+medicare_edited %>% 
+  arrange(desc(long_acting_opioid_claim_count, long_acting_opioid_prescribing_rate)) %>%
+  filter(long_acting_opioid_prescribing_rate>90)
+
+# - individual supplier Mark Lodico again - in PA prescribed 4757 opioids, 4591 of which were long acting opioids (interventional pain management. 
+
+# Richard Plowey nuerology- 2774 opioids prescribed- 2673 were long acting - or 96.36% nuerology- 
+
+# Laura Bye - nurse practionter rate of	96.02	in long-term opioids
+
+
+```
+
+
+```{r}
+
+
+#total speciality types 
+
+speciality_types <- Medicare_Part_D_Opioid_Prescriber_2013 %>%
+  group_by(specialty_description) %>%
+  summarise(total_specialists=n())
+
+# grabs medicare_edited (which grabs only opioid prescribing rate over 50%) and filters claim count over 100 opioids, arranges descending by opioid prescribing rate and groups by speciality.   
+
+high_prescribing_long_term_doctors <- medicare_edited %>% 
+  arrange(desc(long_acting_opioid_prescribing_rate)) %>%
+  filter(long_acting_opioid_claim_count>100) %>%
+  group_by(specialty_description) %>%
+  summarise(high_prescribing_long_term_specialists = n()) %>%
+  arrange(desc(high_prescribing_long_term_specialists))
+
+
+  speciality_prescriptions_long_term_join <- high_prescribing_long_term_doctors %>%
+  inner_join(speciality_types) %>% 
+  mutate( rate = high_prescribing_long_term_specialists/total_specialists)%>%
+  arrange(desc(rate))
+  
+  options(scipen = 999)
+  
+  print(speciality_prescriptions_long_term_join)
+  
+  
+ 
+ 
+ #s speciality_prescriptions_long_term_join is a join between total specialities in a field (speciality_types) and specialists who prescribe high dosages of long term opioids (high_prescribing_long_term_specialists) (so above 50%). When you do this join you can see some high rates are interventional pain managment, pain management and  anesthesiology, this keeps in line with high prescribers of regular opioids, where high prescribers were in interventional pain management, pain managament BUT orthopedic surgery (Anesthesiology was 0.18615722656 rate in normal opioids vs long term anesthosiology rate of 0.13403320312 ). 
+ 
+ 
+ # Long term opioids tend to have lower rates than normal opioids. 
+ 
+ 
+ #Would have to see if these professions require high opioid dosages, or if there is another reason. 
+ 
+ # again specialties that lie on lower end but have outliers?  
+  
+# individual supplier Mark Lodico again - in PA prescribed 4757 opioids, 4591 of which were long acting opioids (interventional pain management. 
+
+# Richard Plowey nuerology- 2774 opioids prescribed- 2673 were long acting - or 96.36% nuerology- 
+
+# Laura Bye - nurse practionter rate of	96.02	in long-term opioids - rate 0.00882130211 862 high prescribers out of 97718 specialists 
+
+
+```
+
+
+
+
+PART 3- 
 
 11. Pills per person sent out through medicare opioids data by state - 
 In other words, do those states where prescribers stand out with high prescriptions also have high pills per person? 
 Unable to do this as state is abbreviated in one and not the other. 
+
 
 Join- 
 
@@ -325,205 +502,5 @@ summarise(total_opioids_2017 = n()) %>% arrange(desc(total_opioids_2017)) %>% pr
 
 
 
-ZIP CODES THAT HAVE HIGH PRESCRIPTIONS 
-Zip codes are not grouping properly - nor is it allowing me to group by long-term opioids and short-term opioids
-(zip codes are appearing more than once)
-
-13. What specific zip codes have highest perscription in total? Currently unable to view this as it is not grouping properly. I would also like to see which zip codes have high long term opioid percriptions and short-term opioid prescriptions, then compare to 2017, to see if overall trend has been towards more long -term or short-term opioids. 
-
-```{r}
-
-medicare_edited %>% 
-  group_by(nppes_provider_zip_code,nppes_provider_state, opioid_claim_count) %>%
-  summarise(total_opioids = n()) %>% select( nppes_provider_zip_code,total_opioids) %>% arrange(desc(total_opioids))
-
-# medicare_opioids_zip_count <- medicare_edited %>% group_by(nppes_provider_zip_code, opioid_claim_count) %>% summarise(long_acting_opioids_per_zip = sum(long_acting_opioid_claim_count), short_acting_opioids_per_zip = sum(short_acting_opioid_claim_count)) %>%arrange(desc(opioid_claim_count))
-
-
-```
-
-14. Pills per person sent out through medicare opioids data, specifically in those high prescribing zip codes? 
- In other words, do those zip codes where prescribers stand out with high prescriptions also have high pills per person? 
- Who is prescribing in those zip codes?  
- 
-Join- 
-
-```{r}
-# Define API Key
-census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
-
-# If you need to look up variables, this is how you do it
-acs_variables <- load_variables(2017, "acs5" )
-
-```
-
-```{r}
-#get female and males medicare and group into one sum of population by medicare (zctas)
-# 10 is male medicare over 65+ / 20 is female medicare over 65+
-
-
-acs_zcta_medicare_pivot <- get_acs(geography= "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
-  select(-moe)%>%
-  pivot_wider(values_from=estimate,names_from = variable) %>%
-  mutate(total_medicare=C27006_010+C27006_010)%>%
-  select(GEOID,NAME, total_medicare)
-```
-
-```{r}
-
-# join two together (medicare + population)
-
-medicare_population_opioids_zip <-medicare_opioids_zip_count %>%
-  inner_join(acs_zcta_medicare_pivot, by=c ( "nppes_provider_zip_code" = "GEOID"))%>%
-  filter (total_medicare !=0)
-
-```
-
-I tried to group as well by long acting opioids per zip, short acting opioids per zip- as I wanted to compare these trends *since long acting opioids are not recommended. 
-
-
-*also want to compare long-acting opioids to trend in 2017. 
-
-``` {r}
-
-medicare_population_opioids_zip <- medicare_population_opioids_zip %>% 
-  mutate(opioids_per_person = opioid_claim_count/total_medicare,
-         long_acting_opioids_per_person = long_acting_opioids_per_zip/total_medicare,
-         short_acting_opioids_per_person = short_acting_opioids_per_zip/ total_medicare)%>%
-  select (nppes_provider_state, nppes_provider_zip_code, opioid_claim_count, long_acting_opioids_per_zip, short_acting_opioids_per_zip, total_medicare, opioids_per_person,long_acting_opioids_per_person, short_acting_opioids_per_person)
-
-
-# how are there some locations with medicare population of only 2 people but mutliple prescribers, is this an error ?  
-
-``` 
-
-15.Locations (zip codes ) with high counts of opioids per person? High counts of long-acting opioids, short acting opioids? map this out to compare trends in long acting vs short acting. 
-
-```{r}
-
-medicare_population_opioids_zip %>% arrange(desc(opioids_per_person))
-```  
-  
-
-
-PART 2- 
-
-Long- acting Opioids -
-
-WOULD LIKE TO COMPARE LONG TERM OPIOID TREND WITH SHORT-TERM OPIOID TREND /// comparison of 2013 to 2017 to see if long actin gopioids have increased, as well as overall opioids increased. 
-
-The number of Medicare Part D opioid drug claims that are considered long-acting, including original prescriptions and refills. For a list of drugs that include long-acting opioids, visithttps://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Medicare-Provider-Charge-Data/Downloads/OpioidDrugList.zip.
-
-
-What are long acting opioids? ( long_acting_opioid_claim_count field in database) 
-
-Long-acting opioid -  https://www.drugabuse.gov/sites/default/files/files/CommonlyUsedLAOpioids.pdf
-
-https://www.cdc.gov/vitalsigns/opioids/index.html - the CDC states : " Taking opioids for longer periods of time or in higher doses increases the risk of addiction, overdose, and death." 
-
-
-Examples of long-acting opioids
-Fentanyl patch (Duragesic)
-Methadone (Dolophine)
-Morphine (Kadian)
-Oxycodone controlled-release (OxyContin)
-(https://www.uofmhealth.org/health-library/abo7833)
-
-https://www.ajmc.com/journals/supplement/2015/ace0029_aug15_painrems/ace0029_aug15_painrems_ray 
-
-Opioid Claims: The number of Medicare Part D opioid drug claims, including original
-prescriptions and refills.
-• Long-Acting Opioid Claims: The number of Medicare Part D opioid drug claims that are
-considered long-acting, including original prescriptions and refills
-• Opioid Prescribing Rate: The number of Opioid Claims divided by the Overall Claims and
-multiplied by 100.
-                  
-• Long-Acting Opioid Prescribing Rate: The number of Long-Acting Opioid Claims divided by the Opioid Claims and multiplied by 100.
-
-
--  Comparison of rate of opioid use to long-term use opioids in 2013 
--  who prescribes the most long term opioids - what field ?
--  any outliers in long -term opioids prescribed? 
-- comparing death rates to long term opiods used in states, do they go up compared to overall trend? 
-
-```{r}
-
-medicare_edited %>% 
-  arrange(desc(long_acting_opioid_prescribing_rate)) %>%
-  filter(long_acting_opioid_claim_count>100)
-
-#rey ximenes- TX- 
-# 5 practitioners in PA are among high opioid prescriber above 100 opioiids dispensed - 2 of them seem to be related Lodico but work in different department Anesthesiology and interventional pain management 
-# louis jacobsen - in WA also amongst high long term prescribers  
-
-
-```
-
-
-```{r}
-
-medicare_edited %>% 
-  arrange(desc(long_acting_opioid_claim_count, long_acting_opioid_prescribing_rate)) %>%
-  filter(long_acting_opioid_prescribing_rate>90)
-
-# - individual supplier Mark Lodico again - in PA prescribed 4757 opioids, 4591 of which were long acting opioids (interventional pain management. 
-
-# Richard Plowey nuerology- 2774 opioids prescribed- 2673 were long acting - or 96.36% nuerology- 
-
-# Laura Bye - nurse practionter rate of	96.02	in long-term opioids
-
-
-```
-
-
-```{r}
-
-
-#total speciality types 
-
-speciality_types <- Medicare_Part_D_Opioid_Prescriber_2013 %>%
-  group_by(specialty_description) %>%
-  summarise(total_specialists=n())
-
-# grabs medicare_edited (which grabs only opioid prescribing rate over 50%) and filters claim count over 100 opioids, arranges descending by opioid prescribing rate and groups by speciality.   
-
-high_prescribing_long_term_doctors <- medicare_edited %>% 
-  arrange(desc(long_acting_opioid_prescribing_rate)) %>%
-  filter(long_acting_opioid_claim_count>100) %>%
-  group_by(specialty_description) %>%
-  summarise(high_prescribing_long_term_specialists = n()) %>%
-  arrange(desc(high_prescribing_long_term_specialists))
-
-
-  speciality_prescriptions_long_term_join <- high_prescribing_long_term_doctors %>%
-  inner_join(speciality_types) %>% 
-  mutate( rate = high_prescribing_long_term_specialists/total_specialists)%>%
-  arrange(desc(rate))
-  
-  options(scipen = 999)
-  
-  print(speciality_prescriptions_long_term_join)
-  
-  
- 
- 
- #s speciality_prescriptions_long_term_join is a join between total specialities in a field (speciality_types) and specialists who prescribe high dosages of long term opioids (high_prescribing_long_term_specialists) (so above 50%). When you do this join you can see some high rates are interventional pain managment, pain management and  anesthesiology, this keeps in line with high prescribers of regular opioids, where high prescribers were in interventional pain management, pain managament BUT orthopedic surgery (Anesthesiology was 0.18615722656 rate in normal opioids vs long term anesthosiology rate of 0.13403320312 ). 
- 
- 
- # Long term opioids tend to have lower rates than normal opioids. 
- 
- 
- #Would have to see if these professions require high opioid dosages, or if there is another reason. 
- 
- # again specialties that lie on lower end but have outliers?  
-  
-# individual supplier Mark Lodico again - in PA prescribed 4757 opioids, 4591 of which were long acting opioids (interventional pain management. 
-
-# Richard Plowey nuerology- 2774 opioids prescribed- 2673 were long acting - or 96.36% nuerology- 
-
-# Laura Bye - nurse practionter rate of	96.02	in long-term opioids - rate 0.00882130211 862 high prescribers out of 97718 specialists 
-
-
-```
 
 
