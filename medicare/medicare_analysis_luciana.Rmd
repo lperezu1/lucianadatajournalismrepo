@@ -31,6 +31,7 @@ library(zipcode)
 library(viridis)
 library(mapview)
 library(ggthemes)
+library(datasets)
 ```
 
 This project will analyze prescribing rates of health providers that participate in in Medicare Part D (Medicare prescription drug benefit ) program via the Centers for Medicare & Medicaid Services (CMS)  public data set,  Medicare Part D Opioid Prescriber Summary File (2013). Unfortunately there are no databases from part D before 2013 (there are after 2013) . 
@@ -227,6 +228,8 @@ medicare_edited %>% filter (nppes_provider_state == "TX") %>% arrange(desc(opioi
 
 ```{r}
 
+#medicare_high_opioids_zips has zip codes descending from most opioids to least (shows states as well)
+
 medicare_high_opioids_zips <- medicare_edited %>% 
   arrange(desc(opioid_claim_count)) %>%
   group_by (nppes_provider_zip_code, nppes_provider_state) %>%
@@ -234,7 +237,26 @@ medicare_high_opioids_zips <- medicare_edited %>%
   arrange(desc(opioids)) %>% 
   print(medicare_high_opioids_zips)
 
-# zip code- 77030 in TX (So Texas yes- Texas had 	64950 opioids sent to it ) - who is prescribing in this zip code? 
+test <- medicare_high_opioids_zips %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table <- medicare_high_opioids_zips %>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_y <- zip_code_state_lookup_table %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# zip code- 77030 in TX (Texas zip had 4132 - Texas overall had 	64950 opioids sent to it ) - who is prescribing in this zip code? 
+
 # zip code MN 55905 - 2742 ..etc. 
 
 
@@ -415,7 +437,7 @@ high_prescribing_long_term_doctors <- medicare_edited %>%
 
 
 
-PART 3- 
+PART 3-  Pills per person by Zip code and state 
 
 11. Pills per person sent out through medicare opioids data by state - 
 In other words, do those states where prescribers stand out with high prescriptions also have high pills per person? 
@@ -444,30 +466,50 @@ acs_medicare_pivot_2013 <- get_acs(geography= "state", variables = c("C27006_010
   mutate(total_medicare=C27006_010+C27006_010)%>%
   select(NAME, total_medicare)
 ```
+```{r}
+# Get states dataframe
+state_abb <- enframe(state.abb)
+state_name <- enframe(state.name)
+
+state_abb_name <- state_abb %>%
+  inner_join(state_name, by="name") %>%
+  select(-name) %>%
+  rename(abb = value.x,
+         name = value.y) %>%
+  add_row(abb = "DC", name = "District of Columbia") %>%
+  add_row(abb = "PR", name = "Puerto Rico")
+
+
+```
 
 ```{r}
 
-# join two together (medicare + population)
+# Join together acs_medicare_pivot and state name abbreviation crosswalk - 
+#District of Columbia had 5669 opioids sent to it in 2013, with an average of 7.626640 opioids per person. After distict of columbia is Massachusetts, with 	827254 or 3.963837 opioids per 100 people .Then New York with 	2363616, or 	3.631766 opioids per 100 people.  
 
-medicare_population_opioids_2013 <- medicare_opioids_state_2013 %>%
-  inner_join (acs_medicare_pivot_2013 , by=c ("nppes_provider_state"= "NAME")) %>% 
-print (medicare_population_opioids_2013) 
+acs_medicare_pivot_2013_x <- acs_medicare_pivot_2013 %>%
+  inner_join(state_abb_name, by=c("NAME"="name")) %>%
+  inner_join(medicare_opioids_state_2013, by=c("abb" = "nppes_provider_state"))%>% 
+  mutate(opioids_per_person = total_opioids_2013/total_medicare * 100) %>% arrange(desc(opioids_per_person))
 
-
-#how to abbreviate state name 
 ```
  
+ Compasion using zip codes 
+ 
+ - zip codes with most pills per person sent to it? 
+ - comparison 2013 ACS vs 2017 ACS via state/ via zip code? 
+ - are opioids increasing, are they increasing in those same locations that were already up there in 2013? 
+ 
 
-``` {r}
 
-medicare_population_opioids_2013 <-medicare_population_opioids_2013 %>% 
-  mutate(opioids_per_person = opioid_claim_count/total_medicare) 
-  
-#not working
 
-``` 
 
-12. Comparison of 2013, to 2017. Has opiods prescribed to seniors increased or decreased? Opioids prescribed have increased. - they have increased. I would like to map this to compare with 2013- maybe more years to follow trend. 
+
+
+
+
+
+ Comparison of 2013, to 2017. Has opiods prescribed to seniors increased or decreased? Opioids prescribed have increased. - they have increased. I would like to map this to compare with 2013- maybe more years to follow trend. 
 
 ```{r}
 
