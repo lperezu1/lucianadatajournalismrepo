@@ -215,7 +215,6 @@ medicare_opioids_state_2013 <- medicare_edited %>%
 medicare_edited %>% filter (nppes_provider_state == "CA") %>% arrange(desc(opioid_claim_count)) 
 ```
 
-
 ```{r}
 medicare_edited %>% filter (nppes_provider_state == "NY") %>% arrange(desc(opioid_claim_count))
 ```
@@ -273,7 +272,6 @@ medicare_edited %>% filter (nppes_provider_zip_code == 77030) %>% arrange(desc(o
 ``` 
 
 
-
 10. how would I group by long term and short term opioids as well? I would like to compare opioids short -term / long -term sent out in a map, as according to certain research taking long-acting-opioids is not beneficial. Ive tried and it is not grouping properly. 
 
 
@@ -294,7 +292,6 @@ medicare_high_long_acting_opioids_zips <- medicare_edited %>%
 ``` 
 
 
-
 ```{r}
 
 # showing same as normal opioids :( 
@@ -307,7 +304,6 @@ medicare_short_acting_opioids_zips <- medicare_edited %>%
   print(medicare_short_acting_opioids_zips)
 
 ```
-
 
 
 PART 2- 
@@ -414,7 +410,6 @@ high_prescribing_long_term_doctors <- medicare_edited %>%
   
   
  
- 
  #s speciality_prescriptions_long_term_join is a join between total specialities in a field (speciality_types) and specialists who prescribe high dosages of long term opioids (high_prescribing_long_term_specialists) (so above 50%). When you do this join you can see some high rates are interventional pain managment, pain management and  anesthesiology, this keeps in line with high prescribers of regular opioids, where high prescribers were in interventional pain management, pain managament BUT orthopedic surgery (Anesthesiology was 0.18615722656 rate in normal opioids vs long term anesthosiology rate of 0.13403320312 ). 
  
  
@@ -437,14 +432,28 @@ high_prescribing_long_term_doctors <- medicare_edited %>%
 
 
 
-PART 3-  Pills per person by Zip code and state 
+PART 3-  Pills per person by Zip code and state utlilizing ACS5 year data - 
 
 11. Pills per person sent out through medicare opioids data by state - 
 In other words, do those states where prescribers stand out with high prescriptions also have high pills per person? 
-Unable to do this as state is abbreviated in one and not the other. 
 
 
 Join- 
+
+
+```{r}
+ 
+medicare_opioids_state_2013 <- medicare_edited %>% 
+  group_by(nppes_provider_state) %>%
+  summarise(total_opioids_2013 = n()) %>% arrange(desc(total_opioids_2013)) %>%  print(medicare_opioids_state)
+
+# CA	109563 
+# NY	85841 
+# TX	64950 
+#FL 61029 
+
+```
+
 
 ```{r}
 # Define API Key
@@ -466,6 +475,8 @@ acs_medicare_pivot_2013 <- get_acs(geography= "state", variables = c("C27006_010
   mutate(total_medicare=C27006_010+C27006_010)%>%
   select(NAME, total_medicare)
 ```
+
+
 ```{r}
 # Get states dataframe
 state_abb <- enframe(state.abb)
@@ -494,22 +505,69 @@ acs_medicare_pivot_2013_x <- acs_medicare_pivot_2013 %>%
 
 ```
  
- Compasion using zip codes 
- 
- - zip codes with most pills per person sent to it? 
- - comparison 2013 ACS vs 2017 ACS via state/ via zip code? 
- - are opioids increasing, are they increasing in those same locations that were already up there in 2013? 
- 
 
 
 
-
-
-
-
-
+PART 4- Has opioids delivered through medicare increased? USING ACS1 YEAR DATA - 
 
  Comparison of 2013, to 2017. Has opiods prescribed to seniors increased or decreased? Opioids prescribed have increased. - they have increased. I would like to map this to compare with 2013- maybe more years to follow trend. 
+ 
+- edit 2017 then 
+ 
+- pull acs 2013 / 2017 then join with medicare_opioids_state_2013 and mediare_opioids_state_2017
+
+```{r}
+#ACS 2013 
+
+acs_2013 <- get_acs(geography= "state", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs1", year = 2013) %>%
+  select(-moe)%>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare)
+```
+
+
+```{r}
+ 
+medicare_edited <- Medicare_Part_D_Opioid_Prescriber_2013 %>% mutate(short_acting_opioid_claim_count = opioid_claim_count - long_acting_opioid_claim_count) %>% mutate(short_acting_opioid_prescribing_rate = short_acting_opioid_claim_count / opioid_claim_count * 100 )
+
+
+```
+
+
+```{r}
+ 
+medicare_opioids_state_2013 <- medicare_edited %>% 
+  group_by(nppes_provider_state) %>%
+  summarise(total_opioids_2013 = n()) %>% arrange(desc(total_opioids_2013)) %>%  print(medicare_opioids_state)
+
+# CA	109563 
+# NY	85841 
+# TX	64950 
+#FL 61029 
+
+```
+
+
+```{r}
+
+# 2013 ACS 1 join with medicare to get pills per person 
+
+# Join together acs_medicare_pivot and state name abbreviation crosswalk - 
+
+
+acs_medicare_pivot_2013_acs1 <- acs_2013 %>%
+  inner_join(state_abb_name, by=c("NAME"="name")) %>%
+  inner_join(medicare_opioids_state_2013, by=c("abb" = "nppes_provider_state"))%>% 
+  mutate(opioids_per_person = total_opioids_2013/total_medicare * 100) %>% arrange(desc(opioids_per_person))
+
+
+```
+
+
+
+2017 -
+
 
 ```{r}
 
@@ -531,18 +589,192 @@ print(Medicare_Part_D_Opioid_Prescriber_2017)
 ``` 
 
 
+
+
 ```{r}
-
-medicare_opioids_state_2017 <- Medicare_Part_D_Opioid_Prescriber_2017 %>% 
-group_by(nppes_provider_state) %>%
-summarise(total_opioids_2017 = n()) %>% arrange(desc(total_opioids_2017)) %>% print(medicare_opioids_state)
-
-
-
-# OPIOIDS HAVE INCREASED 
+medicare_edited_2017 <- Medicare_Part_D_Opioid_Prescriber_2017 %>% mutate(short_acting_opioid_claim_count = opioid_claim_count - long_acting_opioid_claim_count) %>% mutate(short_acting_opioid_prescribing_rate = short_acting_opioid_claim_count / opioid_claim_count * 100 )
 ``` 
 
 
 
+```{r}
+ 
+medicare_opioids_state_2017 <- medicare_edited_2017 %>% 
+  group_by(nppes_provider_state) %>%
+  summarise(total_opioids_2017 = n()) %>% arrange(desc(total_opioids_2017)) %>%  print(medicare_opioids_state_2017)
 
+# CA	109563 
+# NY	85841 
+# TX	64950 
+#FL 61029 
+
+```
+
+
+```{r}
+#ACS 2017 
+
+acs_2017 <- get_acs(geography= "state", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs1", year = 2017) %>%
+  select(-moe)%>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare)
+```
+
+
+
+```{r}
+
+# 2017 ACS 1 join with medicare to get pills per person 
+
+# Join together acs_medicare_pivot and state name abbreviation crosswalk - 
+#District of Columbia had 4324 opioids sent to it in 2013, with an average of 8.140980opioids per person. After distict of 85841, or 3.897091 opioids per 100 people.  
+
+acs_medicare_pivot_2017_acs1 <- acs_2017 %>%
+  inner_join(state_abb_name, by=c("NAME"="name")) %>%
+  inner_join(medicare_opioids_state_2017, by=c("abb" = "nppes_provider_state")) %>%
+  mutate(opioids_per_person_2017 = total_opioids_2017/total_medicare * 100) %>% 
+  arrange(desc(opioids_per_person_2017))
+
+
+```
+
+```{r}
+
+```
+
+
+Part 5 -  Compasion using zip codes - pills per person 
+ 
+ - zip codes with most pills per person sent to it? 
+ - comparison 2013 ACS vs 2017 ACS via state/ via zip code? 
+ - are opioids increasing, are they increasing in those same locations that were already up there in 2013? 
+ 
+ 
+ 
+ ZIP CODES - opioids medicare 2013 - 
+ 
+ 
+```{r}
+
+#utilized medicare edited (which is medicare 2013 data edited)
+
+#medicare_high_opioids_zips has zip codes descending from most opioids to least (shows states as well)
+
+medicare_high_opioids_zips <- medicare_edited %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(opioids = n()) %>% 
+  arrange(desc(opioids)) %>% 
+  print(medicare_high_opioids_zips)
+
+test <- medicare_high_opioids_zips %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table <- medicare_high_opioids_zips %>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_y <- zip_code_state_lookup_table %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# zip code- 77030 in TX (Texas zip had 4132 - Texas overall had 	64950 opioids sent to it ) - who is prescribing in this zip code? 
+
+# zip code MN 55905 - 2742 ..etc. 
+
+
+# https://www.drugabuse.gov/opioid-summaries-by-state/texas-opioid-summary says Texas (not medicare had some of the lowest opioid death rates , as well as opioid prescriptions below national average)
+
+# TX	64950 
+
+
+```  
+ 
+
+
+```{r}
+#get female and males medicare and group into one sum of population by medicare by ZIPCODE 
+# 10 is male medicare over 65+ / 20 is female medicare over 65+
+
+
+acs_medicare_zips <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
+  select(-moe)%>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare) %>%
+  mutate(NAME = str_remove(NAME,"ZCTA5 "))
+
+```
+
+2013 JOIN - 
+```{r}
+
+# Join acs_medicare_zips_2013 and medicare_high_opioids_zips 
+
+#ZCTAS with zip 
+
+acs_medicare_pivot_2013_zips <- acs_medicare_zips %>%
+  inner_join(medicare_high_opioids_zips, by=c("NAME"="nppes_provider_zip_code")) %>%
+  mutate(opioids_per_person = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person))
+
+```
+
+
+2017 JOIN - 
+
+
+```{r}
+
+#utilized medicare edited (which is medicare 2013 data edited)
+
+#medicare_high_opioids_zips has zip codes descending from most opioids to least (shows states as well)
+
+medicare_high_opioids_zips_2017 <- medicare_edited_2017 %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(opioids = n()) %>% 
+  arrange(desc(opioids)) %>% 
+  print(medicare_high_opioids_zips_2017)
+
+test_2017 <- medicare_high_opioids_zips_2017 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table_2017 <- medicare_high_opioids_zips_2017 %>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_y_2017 <- zip_code_state_lookup_table_2017 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+
+```  
+
+
+```{r}
+
+# Join acs_medicare_zips_2013 and medicare_high_opioids_zips 
+
+#ZCTAS with zip 
+
+acs_medicare_pivot_2017_zips <- acs_medicare_zips %>%
+  inner_join(medicare_high_opioids_zips_2017 , by=c("NAME"="nppes_provider_zip_code")) %>%
+  mutate(opioids_per_person = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person))
+
+```
 
