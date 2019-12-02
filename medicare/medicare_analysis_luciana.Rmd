@@ -34,34 +34,24 @@ library(ggthemes)
 library(datasets)
 ```
 
-This project will analyze prescribing rates of health providers that participate in in Medicare Part D (Medicare prescription drug benefit ) program via the Centers for Medicare & Medicaid Services (CMS)  public data set,  Medicare Part D Opioid Prescriber Summary File (2013). Unfortunately there are no databases from part D before 2013 (there are after 2013) . 
+This project will analyze prescribing rates of health providers that participate in in Medicare Part D (Medicare prescription drug benefit ) program via the Centers for Medicare & Medicaid Services (CMS) public data set, Medicare Part D Opioid Prescriber Summary File (2013).
+
+The Medicare Part D Opioid Prescriber Summary File (2013) presents information on the individual opioid prescribing rates of health providers that participate in Medicare Part D program. It provides data on the number and percentage of prescription claims (includes new prescriptions and refills) for opioid drugs, and contains information on each provider’s name, specialty, state, and ZIP code.Unfortunately there are no databases from part D before 2013 (there are after 2013) . 
+
+Document Breakdown: 
 
 Pt1. Opioid prescriptions by practice (specialties prescribing practices rate vs. rate of some high prescription outliers such as family practice and nurse practitioners)
 
 PT.2 comparison of long-term opioid prescriptions (specialties prescribing practices rate vs. rate of some high prescription outliers such as family practice and nurse practitioners)
 
+PART 3-  Pills per person by state utlilizing ACS5 year data - 
 
-Part D summary file -
-
-Opioid Claims: The number of Medicare Part D opioid drug claims, including original
-prescriptions and refills.
-• Long-Acting Opioid Claims: The number of Medicare Part D opioid drug claims that are
-considered long-acting, including original prescriptions and refills
-• Opioid Prescribing Rate: The number of Opioid Claims divided by the Overall Claims and
-multiplied by 100.
-• Long-Acting Opioid Prescribing Rate: The number of Long-Acting Opioid Claims divided by the Opioid Claims and multiplied by 100 (so opioid claim count include long acting opiods in it).
+PART 4- 
+Comparison of 2013, to 2017. Opioids prescribed have increased in certain locations. I would like to map this to compare with 2013- maybe more years to follow trend.  
 
 
-good link: 
-https://oig.hhs.gov/oei/reports/oei-02-18-00220.pdf
-
-
-PT 1. 
-
-The Centers for Medicare & Medicaid Services (CMS) has prepared a public data set, the Medicare Part D Opioid Prescriber Summary File, which presents information on the individual opioid prescribing rates of health providers that participate in Medicare Part D program. This file is a prescriber-level data set that provides data on the number and percentage of prescription claims (includes new prescriptions and refills) for opioid drugs, and contains information on each provider’s name, specialty, state, and ZIP code.
-
-This summary file was derived from the 2013 Part D Prescriber Summary Table (Documentation available at: https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Medicare-Provider-Charge-Data/Downloads/Prescriber_Methods.pdf)
-
+Part 5 -Have certain zip codes seen an increase in opioids? Compasion using zip codes - pills per person Part 1 
+ 
 
 2013 database - https://data.cms.gov/Medicare-Part-D/Medicare-Part-D-Opioid-Prescriber-Summary-File-201/yb2j-f3fp
 
@@ -140,15 +130,21 @@ medicare_edited %>%
 
 5. What professions have highest opioid dosage rate?  - When you join total specialties in a field (speciality_types) and specialists who prescribe high dosages of opioids (high_prescribing_doctors) (so above 50%) you  see some high rates are interventional pain management, pain management and orthopedic surgery. Do these professions require high opioid dosages, or if there is another reason? Why such high prescription rates? 
 
-highlights- 
+```{r}
+# highlights- 
 
-- nurse practitioner with 185 claim count  but 97.30% are opioids 
+# nurse practitioner with 185 claim count  but 97.30% are opioids 
 
-- family practice with 155 claim count but 98.06% are opioids
+# family practice with 155 claim count but 98.06% are opioids
  
-- 	Nurse Practitioner	1207 claim count 96.02% opiods  ? Patricia Borst 
+#	Nurse Practitioner	1207 claim count 96.02% opiods  ? Patricia Borst 
 
-articles that speak on  https://scienceofcaring.ucsf.edu/research/nps-and-opioid-prescribing-what-don’t-we-know  - "The information matters because nurse practitioners (NPs) account for the third-largest share of opioids prescribed in primary care, the practice setting that accounts for the largest percentage of opioid prescriptions in the U.S. In rural areas – where NPs are often the only primary care providers providing services to vulnerable populations – the opioid epidemic has been particularly fast-growing." 
+
+``` 
+
+Articles that speak on this: 
+
+https://scienceofcaring.ucsf.edu/research/nps-and-opioid-prescribing-what-don’t-we-know  - "The information matters because nurse practitioners (NPs) account for the third-largest share of opioids prescribed in primary care, the practice setting that accounts for the largest percentage of opioid prescriptions in the U.S. In rural areas – where NPs are often the only primary care providers providing services to vulnerable populations – the opioid epidemic has been particularly fast-growing." 
  -  https://www.ncbi.nlm.nih.gov/pubmed/25896191
 
 
@@ -156,9 +152,9 @@ articles that speak on  https://scienceofcaring.ucsf.edu/research/nps-and-opioid
 
  Speciality_prescriptions_join is a join between total specialities in a field (speciality_types) and specialists who prescribe high dosages of opioids (high_prescribing_doctors) (so above 50%). When you do this join you can see some high rates are interventional pain managment, pain management and orthopedic surgery. 
  
- Would have to see if these professions require high opioid dosages, or if there is another reason. 
+Would have to see if these professions require high opioid dosages, or if there is another reason. 
  
- Futhermor certain individual prescribers ( such as nurse practioner and family doctos) have high opioid prescriptions while their overall field has low prescribing rates (nurse = 0.015 and family medicine is 0.004 or 3 out of 635 prescribed very high).
+Futhermore certain individual prescribers ( such as nurse practioner and family doctos) have high opioid prescriptions while their overall field has low prescribing rates (nurse = 0.015 and family medicine is 0.004 or 3 out of 635 prescribed very high).
 
 ```{r}
 #total speciality types 
@@ -189,12 +185,9 @@ high_prescribing_doctors <- medicare_edited %>%
 
 ```
 
- 
 7. Which states prescribed the most opioids? 
 
-Join- 
-how to get state abbreviation or state to show up as name? if not join will not work. 
-
+Join- Get state abbreviation or state name to link up properly. 
 
 ```{r}
  
@@ -209,7 +202,7 @@ medicare_opioids_state_2013 <- medicare_edited %>%
 
 ```
 
-9. high prescribers in CA, NY and TX ? Why do these states have such high dosages compared to other states? Especially CA?
+8. high prescribers in CA, NY and TX ? Why do these states have such high dosages compared to other states? Especially CA?
  
 ```{r}
 medicare_edited %>% filter (nppes_provider_state == "CA") %>% arrange(desc(opioid_claim_count)) 
@@ -223,7 +216,7 @@ medicare_edited %>% filter (nppes_provider_state == "NY") %>% arrange(desc(opioi
 medicare_edited %>% filter (nppes_provider_state == "TX") %>% arrange(desc(opioid_claim_count))
 ```
 
-8. Which zip codes had most prescriptions sent to it? are these the same as the states with most opioids? 
+9. Which zip codes had most prescriptions sent to it? are these the same as the states with most opioids? 
 
 ```{r}
 
@@ -271,21 +264,42 @@ medicare_edited %>% filter (nppes_provider_zip_code == 77030) %>% arrange(desc(o
 
 ``` 
 
-
 10. how would I group by long term and short term opioids as well? I would like to compare opioids short -term / long -term sent out in a map, as according to certain research taking long-acting-opioids is not beneficial. Ive tried and it is not grouping properly. 
+
+
+- Zip code 77030 in Texas also has highest amounts of long_acting_opioids sent to it .NY 10016 has high rates of long_Term_opioids as well. Would be interesting to compare with 2017. 
 
 
 ```{r}
 
-# showing same as normal opioids :( 
+#medicare_high_opioids_zips has zip codes descending from most opioids to least (shows states as well)
 
 medicare_high_long_acting_opioids_zips <- medicare_edited %>% 
   arrange(desc(long_acting_opioid_claim_count)) %>%
-  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state, long_acting_opioid_claim_count) %>%
   summarise(long_acting_opioids = n()) %>% 
   arrange(desc(long_acting_opioids)) %>% 
   print(medicare_high_long_acting_opioids_zips)
 
+
+test <- medicare_high_long_acting_opioids_zips%>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table_long <- medicare_high_long_acting_opioids_zips%>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_y <- zip_code_state_lookup_table_long %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
 
 
 
@@ -298,7 +312,7 @@ medicare_high_long_acting_opioids_zips <- medicare_edited %>%
 
 medicare_short_acting_opioids_zips <- medicare_edited %>% 
   arrange(desc(short_acting_opioid_claim_count)) %>%
-  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state, short_acting_opioid_claim_count) %>%
   summarise(short_acting_opioids = n()) %>% 
   arrange(desc(short_acting_opioids)) %>% 
   print(medicare_short_acting_opioids_zips)
@@ -310,7 +324,7 @@ PART 2-
 
 Long- acting Opioids -
 
-WOULD LIKE TO COMPARE LONG TERM OPIOID TREND WITH SHORT-TERM OPIOID TREND /// comparison of 2013 to 2017 to see if long actin gopioids have increased, as well as overall opioids increased. 
+Comparison of long term opioids trends with short-term opioids trend/ comparison of 2013 to 2017 to see if long acting opioids have increased, as well as overall opioids increased. 
 
 The number of Medicare Part D opioid drug claims that are considered long-acting, including original prescriptions and refills. For a list of drugs that include long-acting opioids, visithttps://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Medicare-Provider-Charge-Data/Downloads/OpioidDrugList.zip.
 
@@ -337,8 +351,10 @@ prescriptions and refills.
 considered long-acting, including original prescriptions and refills
 • Opioid Prescribing Rate: The number of Opioid Claims divided by the Overall Claims and
 multiplied by 100.
-                  
-• Long-Acting Opioid Prescribing Rate: The number of Long-Acting Opioid Claims divided by the Opioid Claims and multiplied by 100.
+• Long-Acting Opioid Prescribing Rate: The number of Long-Acting Opioid Claims divided by the Opioid Claims and multiplied by 100 (so opioid claim count includes long acting opiods in it).
+
+good link: 
+https://oig.hhs.gov/oei/reports/oei-02-18-00220.pdf
 
 
 -  Comparison of rate of opioid use to long-term use opioids in 2013 
@@ -348,7 +364,7 @@ multiplied by 100.
 
 Tried to groupby long /short acting opioids to compare to overall trend 
 
-- are long term opioids sent to locations same ones as normal rate? 
+11. Are long term opioids sent to locations same ones as normal rate? 
 
 ```{r}
 
@@ -429,28 +445,34 @@ high_prescribing_long_term_doctors <- medicare_edited %>%
 
 ```
 
+```{r}
+
+# long term opioids 
+
+medicare_short_acting_opioids_zips <- medicare_edited %>% 
+  arrange(desc(short_acting_opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(short_acting_opioids = n()) %>% 
+  arrange(desc(short_acting_opioids)) %>% 
+  print(medicare_short_acting_opioids_zips)
+
+```
 
 
+PART 3-  Pills per person by state utlilizing ACS5 year data - 
 
-PART 3-  Pills per person by Zip code and state utlilizing ACS5 year data - 
-
-11. Pills per person sent out through medicare opioids data by state - 
+12. Pills per person sent out through medicare opioids data by state - 
 In other words, do those states where prescribers stand out with high prescriptions also have high pills per person? 
 
+- District of Columbia had 5669 opioids sent to it in 2013, with an average of 7.626640 opioids per person. After distict of columbia is Massachusetts, with 	827254 or 3.963837 opioids per 100 people .Then New York with 	2363616, or 3.631766 opioids per 100 people.  
 
 Join- 
-
 
 ```{r}
  
 medicare_opioids_state_2013 <- medicare_edited %>% 
   group_by(nppes_provider_state) %>%
   summarise(total_opioids_2013 = n()) %>% arrange(desc(total_opioids_2013)) %>%  print(medicare_opioids_state)
-
-# CA	109563 
-# NY	85841 
-# TX	64950 
-#FL 61029 
 
 ```
 
@@ -475,7 +497,6 @@ acs_medicare_pivot_2013 <- get_acs(geography= "state", variables = c("C27006_010
   mutate(total_medicare=C27006_010+C27006_010)%>%
   select(NAME, total_medicare)
 ```
-
 
 ```{r}
 # Get states dataframe
@@ -506,13 +527,11 @@ acs_medicare_pivot_2013_x <- acs_medicare_pivot_2013 %>%
 ```
  
 
+PART 4- 
 
+13. Has opioids delivered through medicare increased? USING ACS1 YEAR DATA - Has opiods prescribed to seniors increased or decreased?
 
-PART 4- Has opioids delivered through medicare increased? USING ACS1 YEAR DATA - 
-
- Comparison of 2013, to 2017. Has opiods prescribed to seniors increased or decreased? Opioids prescribed have increased. - they have increased. I would like to map this to compare with 2013- maybe more years to follow trend. 
- 
-- edit 2017 then 
+ Comparison of 2013, to 2017. Opioids prescribed have increased in certain locations. I would like to map this to compare with 2013- maybe more years to follow trend. 
  
 - pull acs 2013 / 2017 then join with medicare_opioids_state_2013 and mediare_opioids_state_2017
 
@@ -520,12 +539,10 @@ PART 4- Has opioids delivered through medicare increased? USING ACS1 YEAR DATA -
 #ACS 2013 
 
 acs_2013 <- get_acs(geography= "state", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs1", year = 2013) %>%
-  select(-moe)%>%
   pivot_wider(values_from=estimate,names_from = variable) %>%
   mutate(total_medicare=C27006_010+C27006_010)%>%
-  select(NAME, total_medicare)
+  select(NAME, total_medicare, moe)
 ```
-
 
 ```{r}
  
@@ -533,7 +550,6 @@ medicare_edited <- Medicare_Part_D_Opioid_Prescriber_2013 %>% mutate(short_actin
 
 
 ```
-
 
 ```{r}
  
@@ -547,7 +563,6 @@ medicare_opioids_state_2013 <- medicare_edited %>%
 #FL 61029 
 
 ```
-
 
 ```{r}
 
@@ -564,10 +579,7 @@ acs_medicare_pivot_2013_acs1 <- acs_2013 %>%
 
 ```
 
-
-
 2017 -
-
 
 ```{r}
 
@@ -588,14 +600,9 @@ print(Medicare_Part_D_Opioid_Prescriber_2017)
 
 ``` 
 
-
-
-
 ```{r}
 medicare_edited_2017 <- Medicare_Part_D_Opioid_Prescriber_2017 %>% mutate(short_acting_opioid_claim_count = opioid_claim_count - long_acting_opioid_claim_count) %>% mutate(short_acting_opioid_prescribing_rate = short_acting_opioid_claim_count / opioid_claim_count * 100 )
 ``` 
-
-
 
 ```{r}
  
@@ -603,25 +610,16 @@ medicare_opioids_state_2017 <- medicare_edited_2017 %>%
   group_by(nppes_provider_state) %>%
   summarise(total_opioids_2017 = n()) %>% arrange(desc(total_opioids_2017)) %>%  print(medicare_opioids_state_2017)
 
-# CA	109563 
-# NY	85841 
-# TX	64950 
-#FL 61029 
-
 ```
-
 
 ```{r}
 #ACS 2017 
 
 acs_2017 <- get_acs(geography= "state", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs1", year = 2017) %>%
-  select(-moe)%>%
   pivot_wider(values_from=estimate,names_from = variable) %>%
   mutate(total_medicare=C27006_010+C27006_010)%>%
-  select(NAME, total_medicare)
+  select(NAME, total_medicare, moe)
 ```
-
-
 
 ```{r}
 
@@ -634,26 +632,79 @@ acs_medicare_pivot_2017_acs1 <- acs_2017 %>%
   inner_join(state_abb_name, by=c("NAME"="name")) %>%
   inner_join(medicare_opioids_state_2017, by=c("abb" = "nppes_provider_state")) %>%
   mutate(opioids_per_person_2017 = total_opioids_2017/total_medicare * 100) %>% 
-  arrange(desc(opioids_per_person_2017))
+  arrange(desc(opioids_per_person_2017)) %>% print(acs_medicare_pivot_2017_acs1 )
+
+
+```
+
+14. When locations with high margin of errors are eliminated, what does the comparison between 2013 and 2017 look like? It seems that the state trend signalizese opioids have gone done, but not by much. 
+
+```{r}
+acs_medicare_pivot_2017_acs1 <- acs_2017 %>%
+  inner_join(state_abb_name, by=c("NAME"="name")) %>%
+  inner_join(medicare_opioids_state_2017, by=c("abb" = "nppes_provider_state")) %>%
+  mutate(opioids_per_person_2017 = total_opioids_2017/total_medicare * 100) %>% 
+  mutate(moe_percentage = moe/total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  arrange(desc(opioids_per_person_2017)) %>% print(acs_medicare_pivot_2017_acs1 )
+
+```
+
+```{r}
+
+# 2013 ACS 1 join with medicare to get pills per person 
+
+# Join together acs_medicare_pivot and state name abbreviation crosswalk - 
+
+
+acs_medicare_pivot_2013_acs1 <- acs_2013 %>%
+  inner_join(state_abb_name, by=c("NAME"="name")) %>%
+  inner_join(medicare_opioids_state_2013, by=c("abb" = "nppes_provider_state"))%>% 
+  mutate(opioids_per_person_2013 = total_opioids_2013/total_medicare * 100) %>% 
+  mutate(moe_percentage = moe/total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  arrange(desc(opioids_per_person_2013)) %>% print(acs_medicare_pivot_2013_acs1)
 
 
 ```
 
 ```{r}
 
+# inner join 
+
+acs_medicare_state_2017_2013 <- acs_medicare_pivot_2013_acs1 %>%
+  inner_join(acs_medicare_pivot_2017_acs1, by=c("NAME")) %>% select(NAME,opioids_per_person_2013,opioids_per_person_2017) %>% print(acs_medicare_2017_2013)
+
 ```
 
+15. Is there any particular states where opioids have gone up? - Yes, in North Dakota, Kentucky, Indiana, Iowa, Arkansas and Florida. This runs contrary to trends that say opioids prescribed are going down. 
 
-Part 5 -  Compasion using zip codes - pills per person 
+16. Why have opioids gone up in these states. It would be interesting to look at policies in these states (for example, what year did they start going up). What was happening in that year. Could pull summary file part d data for 2014/2015/2016 as well to see how trend goes. 
+
+```{r}
+acs_medicare_state_2017_2013 %>% filter(opioids_per_person_2017> opioids_per_person_2013)
+
+``` 
+
+Part 5 -
+
+17. More specifically, have certain zip codes seen an increase in opioids? Compasion using zip codes (pills per person) 
  
- - zip codes with most pills per person sent to it? 
- - comparison 2013 ACS vs 2017 ACS via state/ via zip code? 
- - are opioids increasing, are they increasing in those same locations that were already up there in 2013? 
- 
- 
- 
- ZIP CODES - opioids medicare 2013 - 
- 
+18.  Which zip codes had the most pills per person prescribed? Which had the least, accounting for MOE. 
+
+19. Are opioids increasing in the same locations that already had the higher rates of opioids, or has another location gone up in opioids purchased?  Which zip codes have high opioids shipped per person in 2013, and then in 2017 when high margins of errors are deleted? Eliminate locations with lnf or high margins of errors.
+
+
+- In 2013 the zip codes with most pills per person (when corrected for margin of error) are 63110 in MO (139.622642 pills per 100 people) and 60612 (121.434938 pills per 100 people) in IL. 
+
+- In 2017 the zip codes with most pills per person (when corrected for margin of error) are 63110 in MO (168.359942	pills per 100 people) and 60612 (134.937611 pills pers 100 people)	in IL. 
+
+
+20. Which specific zip codes have gone up? filter for 2017 > 2013. 
+
+
+21. Why have opioids gone up in certain zipcodes. Could pull summary file part d data for 2014/2015/2016 as well to see how trend goes for certain specific zipcodes. 
+
+
+ZIP CODES - opioids medicare 2013 - 
  
 ```{r}
 
@@ -698,38 +749,37 @@ test_y <- zip_code_state_lookup_table %>%
 
 ```  
  
-
-
 ```{r}
 #get female and males medicare and group into one sum of population by medicare by ZIPCODE 
 # 10 is male medicare over 65+ / 20 is female medicare over 65+
 
 
 acs_medicare_zips <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
-  select(-moe)%>%
   pivot_wider(values_from=estimate,names_from = variable) %>%
   mutate(total_medicare=C27006_010+C27006_010)%>%
-  select(NAME, total_medicare) %>%
+  select(NAME, total_medicare, moe) %>%
   mutate(NAME = str_remove(NAME,"ZCTA5 "))
 
 ```
 
 2013 JOIN - 
+
 ```{r}
 
 # Join acs_medicare_zips_2013 and medicare_high_opioids_zips 
+
+# filtering for moe less than 10% 
 
 #ZCTAS with zip 
 
 acs_medicare_pivot_2013_zips <- acs_medicare_zips %>%
   inner_join(medicare_high_opioids_zips, by=c("NAME"="nppes_provider_zip_code")) %>%
-  mutate(opioids_per_person = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person))
+  mutate(opioids_per_person_2013 = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person_2013)) %>%
+  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  print(acs_medicare_pivot_2013_zips)
 
 ```
-
-
 2017 JOIN - 
-
 
 ```{r}
 
@@ -765,16 +815,202 @@ test_y_2017 <- zip_code_state_lookup_table_2017 %>%
 
 ```  
 
-
 ```{r}
 
-# Join acs_medicare_zips_2013 and medicare_high_opioids_zips 
+# Join aacs_medicare_zips and medicare_high_opioids_zips_2017
 
 #ZCTAS with zip 
 
 acs_medicare_pivot_2017_zips <- acs_medicare_zips %>%
-  inner_join(medicare_high_opioids_zips_2017 , by=c("NAME"="nppes_provider_zip_code")) %>%
-  mutate(opioids_per_person = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person))
+  inner_join(medicare_high_opioids_zips_2017, by=c("NAME"="nppes_provider_zip_code")) %>%
+  mutate(opioids_per_person_2017 = opioids/total_medicare * 100) %>% 
+  arrange(desc(opioids_per_person_2017))%>%
+  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>% 
+  print(acs_medicare_pivot_2017_zips)
 
 ```
+
+```{r}
+
+# inner join to compare 2013 and 2017 side by side. 
+
+acs_medicare_2017_2013 <- acs_medicare_pivot_2013_zips %>%
+  inner_join(acs_medicare_pivot_2017_zips, by=c("NAME")) %>% select(NAME, nppes_provider_state.x, opioids_per_person_2013, opioids_per_person_2017) %>% print(acs_medicare_2017_2013)
+
+```
+
+filter 2017> 2013 
+
+```{r}
+
+# inner join 
+
+acs_medicare_2017_2013 %>% filter (opioids_per_person_2017 > opioids_per_person_2013)
+
+```
+
+22. Since, North Dakota, 	Kentucky, Indiana	, Iowa, Arkansas and Florida all saw increases in opioids, which zip codes in these states account for this? 
+
+- also loooked up and all these states (Except for Florida) have expanded medicaid. https://www.healthinsurance.org/medicaid/
+
+```{r}
+
+# inner join 
+
+acs_medicare_2017_2013 %>% filter(nppes_provider_state.x %in% c("ND","KY","IN","IA","AR","Fl")) %>% arrange(desc(opioids_per_person_2017))
+                              
+```
+
+
+23. zip code  72205 in Arkansas go from	0.02093802 to 30.67420436	per 100 people ? This is in California...
+
+Quick google lookup of AK shows it has been tackling opioid epidemic, particularily Little Rock, AR (72205) : 
+https://www.addictioncenter.com/rehabs/arkansas/little-rock/
+
+https://www.thv11.com/article/news/health/opioids/state-agencies-create-training-against-opioid-crisis/91-f51a7fca-e8a1-47e1-92fb-cfce1b4b036a
+
+
+- particularily Brown increased opioid_prescribing rate /// ADEOGBA Saint did not show up in 2013, but then in 2017 was number 2 in opioids prescribed with rate of 67.72. In propublica look up tool it shows the cost of claims went up (overall, not just opioids) from 21k in 2015 to 267k in 2016. 
+
+```{r}
+
+medicare_edited %>% 
+  arrange(desc(opioid_claim_count, opioid_prescribing_rate)) %>%
+  filter(nppes_provider_zip_code == 72205) 
+
+``` 
+
+```{r}
+
+medicare_edited_2017 %>% 
+  arrange(desc(opioid_claim_count, opioid_prescribing_rate)) %>%
+  filter(nppes_provider_zip_code == 72205) 
+
+``` 
+
+24. Why does zip code 63110	in Missouri go up quite a bit from	139.622642 to	168.359942? Who is prescribing in these zip codes? It seems its more that more people are prescribing opioids ( than an individual or group of doctors prescribing higher amounts)
+
+```{r}
+
+medicare_edited_2017 %>% 
+  arrange(desc(opioid_claim_count, opioid_prescribing_rate)) %>%
+  filter(nppes_provider_zip_code == 63110) 
+
+``` 
+
+```{r}
+
+medicare_edited %>% 
+  arrange(desc(opioid_claim_count, opioid_prescribing_rate)) %>%
+  filter(nppes_provider_zip_code == 63110)%>% filter(opioid_prescribing_rate>90) 
+
+``` 
+
+25. Is this the case with Illinous  - 60612 - In Illinois it appears there are more prescriber as well as higher amounts being dispensed. 
+
+```{r}
+
+medicare_edited %>% 
+  arrange(desc(opioid_claim_count, opioid_prescribing_rate)) %>%
+  filter(nppes_provider_zip_code == 60612)
+
+``` 
+
+```{r}
+
+medicare_edited_2017 %>% 
+  arrange(desc(opioid_claim_count, opioid_prescribing_rate)) %>%
+  filter(nppes_provider_zip_code == 60612) 
+
+``` 
+
+```{r}
+
+medicare_edited_2017 %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  filter(nppes_provider_zip_code == 60612) %>% filter(opioid_prescribing_rate >70)
+
+``` 
+
+26. 19104 in PA - again seems to be a matter of increase in prescribers overall. 
+
+```{r}
+
+medicare_edited %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  filter(nppes_provider_zip_code ==19104)
+
+``` 
+
+```{r}
+
+medicare_edited_2017 %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  filter(nppes_provider_zip_code ==19104)
+
+``` 
+
+
+27.Which states have seen drops in opioid prescriptions filled? Percentage changes. 
+Interesting to look at the difference betweeen policies enacted in Alaska, Puerto Rico, Wyoming, Hawaii vs those of Iowa, Kentucky, Florida, Indiana, North Dakota and Arkansas. Especially Arkansas since it has the biggest increase in opioids prescribed. 
+
+```{r}
+acs_medicare_state_2017_2013<- acs_medicare_state_2017_2013 %>% mutate('percentage change' = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>% print(acs_medicare_state_2017_2013)
+
+
+```
+
+```{r}
+acs_medicare_state_2017_2013 %>% filter(`percentage change`< 0) %>% arrange((`percentage change`))
+
+```
+
+
+```{r}
+acs_medicare_state_2017_2013 %>% filter(`percentage change`>= 0) %>% arrange(desc(`percentage change`)) 
+
+```
+
+28. Which zip codes have seen biggest percentage changes? 
+
+```{r}
+acs_medicare_2017_2013<- acs_medicare_2017_2013 %>% mutate('percentage change' = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>% arrange(desc(`percentage change`)) %>% print(acs_medicare_2017_2013)
+
+``` 
+
+```{r}
+acs_medicare_2017_2013 %>% filter(`percentage change`>= 0) %>% arrange(desc(`percentage change`)) 
+
+```
+
+```{r}
+acs_medicare_2017_2013 %>% filter(`percentage change` < 0) %>% arrange(`percentage change`)
+
+```
+
+
+29. It seems Arkansas and Alaska are two interesting states to look at : 
+
+In this website by the Alaska Department of Helath and Human Services it says that 
+The highest number of opioid-related deaths identified in one year was 108 in 2017 (preliminary data); of which, 100 (93%) were due to overdose but that the rate of Medicare Part D patients who received opioid prescriptions has decreased annually since 2015, suggesting more judicious prescribing in Alaska:  http://dhss.alaska.gov/dph/Director/Pages/opioids/home.aspx  
+
+```{r}
+
+acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AK') %>% arrange(`percentage change`)
+```
+
+
+```{r}
+
+acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AR') %>% arrange(`percentage change`)
+
+```
+
+
+30. Is there a way to look up naltrexone  buprenorphine prescriptions in states?  - according to nyt opioid treatment is used more widely in states that expanded medicaid -  https://www.nytimes.com/2019/08/21/health/opioids-treatment-medicaid.html  
+ 
+the study noted that Arkansas, the only one of the five states with the lowest buprenorphine prescribing rates in Medicaid,  expanded the program.  - https://www.urban.org/research/publication/state-variation-medicaid-prescriptions-opioid-use-disorder-2011-2018 
+ 
+  prescription rate for opioids in Arkansas is sky-high, the second-highest in the country according to this 2017 ranking by the Centers for Disease Control. https://www.cdc.gov/drugoverdose/maps/rxstate2017.html  
+ 
 
