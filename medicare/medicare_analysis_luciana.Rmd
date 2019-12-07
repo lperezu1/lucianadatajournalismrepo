@@ -292,7 +292,7 @@ test <- medicare_high_long_acting_opioids_zips%>%
 zip_code_state_lookup_table_long <- medicare_high_long_acting_opioids_zips%>%
   distinct %>% 
   group_by(nppes_provider_zip_code) %>% 
-  top_n(1, opioids) %>%
+  top_n(1, long_acting_opioids) %>%
   top_n(1, nppes_provider_state) %>%
   select(nppes_provider_zip_code, nppes_provider_state)
 
@@ -955,7 +955,7 @@ medicare_edited_2017 %>%
 Interesting to look at the difference betweeen policies enacted in Alaska, Puerto Rico, Wyoming, Hawaii vs those of Iowa, Kentucky, Florida, Indiana, North Dakota and Arkansas. Especially Arkansas since it has the biggest increase in opioids prescribed. 
 
 ```{r}
-acs_medicare_state_2017_2013<- acs_medicare_state_2017_2013 %>% mutate('percentage change' = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>% print(acs_medicare_state_2017_2013)
+acs_medicare_state_2017_2013<- acs_medicare_state_2017_2013 %>% mutate('percentage change' = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>% arrange(desc(`percentage change`)) %>%  print(acs_medicare_state_2017_2013)
 
 
 ```
@@ -974,7 +974,10 @@ acs_medicare_state_2017_2013 %>% filter(`percentage change`>= 0) %>% arrange(des
 28. Which zip codes have seen biggest percentage changes? 
 
 ```{r}
-acs_medicare_2017_2013<- acs_medicare_2017_2013 %>% mutate('percentage change' = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>% arrange(desc(`percentage change`)) %>% print(acs_medicare_2017_2013)
+acs_medicare_2017_2013 <- acs_medicare_2017_2013 %>% 
+  mutate('percentage change' = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>%
+  arrange(desc(`percentage change`)) %>%
+  print(acs_medicare_2017_2013)
 
 ``` 
 
@@ -996,15 +999,55 @@ The highest number of opioid-related deaths identified in one year was 108 in 20
 
 ```{r}
 
-acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AK') %>% arrange(`percentage change`)
+acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AK') %>% arrange(desc(`percentage change`))
+
+# FIRST ZIP CODE IS IN CA 
+```
+
+
+```{r}
+#glimpse(acs_medicare_2017_2013)
+
+
+acs_medicare_2017_2013_AR <-acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AR') %>% filter(!str_detect(NAME,"^9|^8|^75501")) 
+
+print(acs_medicare_2017_2013_AR)
+
 ```
 
 
 ```{r}
 
-acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AR') %>% arrange(`percentage change`)
+
+zcta_geodata_shifted <- get_acs(geography = "zcta", 
+              variables = "B01001_001", geometry = TRUE) 
+
+
 
 ```
+
+```{r}
+
+AR_join <- zcta_geodata_shifted %>% 
+  inner_join(acs_medicare_2017_2013_AR, by = c("GEOID" = "NAME"))
+
+``` 
+ 
+ 
+ 
+```{r}
+ AR_join %>%
+  ggplot(aes(fill = `percentage change`)) +
+  geom_sf(lwd = 0) +
+  theme_map() +
+  labs(fill='Percentage Change',title="AR", subtitle = "2013-2017", caption = "Source: U.S. Census ACS") +
+  theme(legend.position="right") +
+  scale_fill_viridis_c(option = "magma",labels = comma)
+
+```
+
+
+
 
 
 30. Is there a way to look up naltrexone  buprenorphine prescriptions in states?  - according to nyt opioid treatment is used more widely in states that expanded medicaid -  https://www.nytimes.com/2019/08/21/health/opioids-treatment-medicaid.html  
@@ -1013,4 +1056,3 @@ the study noted that Arkansas, the only one of the five states with the lowest b
  
   prescription rate for opioids in Arkansas is sky-high, the second-highest in the country according to this 2017 ranking by the Centers for Disease Control. https://www.cdc.gov/drugoverdose/maps/rxstate2017.html  
  
-

@@ -1,0 +1,429 @@
+---
+title: "Arkansas_analysis"
+author: "luciana"
+date: "12/5/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+rm(list = ls())
+```
+
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(arcos)
+library(scales)
+library(ggrepel)
+library(tidycensus)
+library(readr)
+library(zipcode)
+library(viridis)
+library(mapview)
+library(ggthemes)
+library(datasets)
+library(plotly)
+```
+
+Analyzing the Medicare Part D Opioid Prescriber Sumamry Files fom 2013 to 2017, an increase in opioids is present in  Arkansas, North Dakota,Indiana, Florida, Kentucky and Iowa. All other states saw a decrease in opioids prescribed. Arkansas has the biggest increase, a 3.11% increase (below is a comparison of pills per person by state). 
+  
+
+2013 Pills 
+```{r}
+
+
+# Medicare Part D Opioid Prescriber Summary File (2013) - 
+
+Medicare_Part_D_Opioid_Prescriber_2013 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_2013.csv")
+
+Medicare_Part_D_Opioid_Prescriber_2013 <-  Medicare_Part_D_Opioid_Prescriber_2013 %>%
+ clean_names()
+
+# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
+
+Medicare_Part_D_Opioid_Prescriber_2013 <- subset(Medicare_Part_D_Opioid_Prescriber_2013, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
+
+
+# Define API Key
+census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
+
+medicare_opioids_state_2013 <- Medicare_Part_D_Opioid_Prescriber_2013 %>% 
+  group_by(nppes_provider_state) %>%
+  summarise(total_opioids_2013 = n()) %>% arrange(desc(total_opioids_2013)) 
+
+#get female and males medicare and group into one sum of population by medicare ACS 1 year data
+# 10 is male medicare over 65+ / 20 is female medicare over 65+
+
+#ACS 2013 
+
+acs_2013 <- get_acs(geography= "state", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs1", year = 2013) %>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare, moe)
+
+# Get states dataframe - since they do not match for a join 
+state_abb <- enframe(state.abb)
+state_name <- enframe(state.name)
+
+state_abb_name <- state_abb %>%
+  inner_join(state_name, by="name") %>%
+  select(-name) %>%
+  rename(abb = value.x,
+         name = value.y) %>%
+  add_row(abb = "DC", name = "District of Columbia") %>%
+  add_row(abb = "PR", name = "Puerto Rico")
+
+
+# 2013 ACS 1 join with medicare to get pills per person 
+
+# Join together acs_medicare_pivot and state name abbreviation crosswalk - 
+
+# Delete margins of errors higher than 10% 
+
+acs_medicare_pivot_2013_acs1 <- acs_2013 %>%
+  inner_join(state_abb_name, by=c("NAME"="name")) %>%
+  inner_join(medicare_opioids_state_2013, by=c("abb" = "nppes_provider_state"))%>% 
+  mutate(opioids_per_person_2013 = total_opioids_2013/total_medicare * 100)  %>% 
+  mutate(moe_percentage = moe/total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  arrange(desc(opioids_per_person_2013)) %>% print(acs_medicare_pivot_2013_acs1)%>% print(acs_medicare_pivot_2013_acs1)
+```
+
+```{r}
+
+
+#Medicare Part D Opioid Prescriber Summary File (2017) -
+#2017 
+
+Medicare_Part_D_Opioid_Prescriber_2017 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_2017.csv")
+
+
+Medicare_Part_D_Opioid_Prescriber_2017 <-  Medicare_Part_D_Opioid_Prescriber_2017 %>%
+ clean_names()
+
+# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
+
+Medicare_Part_D_Opioid_Prescriber_2017 <- subset(Medicare_Part_D_Opioid_Prescriber_2017, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
+
+ 
+medicare_opioids_state_2017 <-  Medicare_Part_D_Opioid_Prescriber_2017 %>% 
+  group_by(nppes_provider_state) %>%
+  summarise(total_opioids_2017 = n()) %>% arrange(desc(total_opioids_2017)) %>%  print(medicare_opioids_state_2017)
+
+#ACS 2017 
+
+acs_2017 <- get_acs(geography= "state", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs1", year = 2017) %>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare, moe)
+
+# 2017 ACS 1 join with medicare to get pills per person  
+
+# Join together acs_medicare_pivot and state name abbreviation crosswalk - 
+
+# Delete margins of errors higher than 10% 
+
+acs_medicare_pivot_2017_acs1 <- acs_2017 %>%
+  inner_join(state_abb_name, by=c("NAME"="name")) %>%
+  inner_join(medicare_opioids_state_2017, by=c("abb" = "nppes_provider_state")) %>%
+  mutate(opioids_per_person_2017 = total_opioids_2017/total_medicare * 100) %>% 
+  mutate(moe_percentage = moe/total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  arrange(desc(opioids_per_person_2017)) %>% print(acs_medicare_pivot_2017_acs1 )
+```
+
+```{r}
+
+# inner join 
+
+states_acs_medicare_2017_2013 <- acs_medicare_pivot_2013_acs1 %>%
+  inner_join(acs_medicare_pivot_2017_acs1, by=c("NAME")) %>% select(NAME,opioids_per_person_2013,opioids_per_person_2017) %>%mutate('percentage change' = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>% arrange(desc(`percentage change`)) %>%  print(acs_medicare_state_2017_2013)
+
+```
+
+
+96 out of 116 zip codes documented in the Medicare Part D summary file saw an increase in opioids prescribed from 2013 to 2017.  
+
+2013 by zip 
+```{r}
+# zip code cleanup 
+#utilized medicare edited (which is medicare 2013 data edited)
+
+#medicare_high_opioids_zips has zip codes descending from most opioids to least (shows states as well)
+
+high_opioids_zips_2013 <- Medicare_Part_D_Opioid_Prescriber_2013 %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(opioids = n()) %>% 
+  arrange(desc(opioids)) %>% 
+  print(high_opioids_zips_2013)
+
+test <- high_opioids_zips_2013 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table <- high_opioids_zips_2013 %>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_y <- zip_code_state_lookup_table %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+
+#USE ACS5 DATA- ACS1 not available 
+
+#get female and males medicare and group into one sum of population by medicare by ZIPCODE 
+# 10 is male medicare over 65+ / 20 is female medicare over 65+
+
+
+acs_medicare_zips <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare, moe) %>%
+  mutate(NAME = str_remove(NAME,"ZCTA5 "))
+
+
+
+# Join acs_medicare_zips_2013 and high_opioids_zips_2013
+# filtering for moe less than 10% 
+#ZCTAS with zip 
+
+acs_medicare_pivot_2013_zips <- acs_medicare_zips %>%
+  inner_join(high_opioids_zips_2013, by=c("NAME"="nppes_provider_zip_code")) %>%
+  mutate(opioids_per_person_2013 = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person_2013)) %>%
+  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  print(acs_medicare_pivot_2013_zips)
+
+```
+2017 by zip 
+```{r}
+
+#high_opioids_zips_2017 has zip codes descending from most opioids to least (shows states as well)
+
+high_opioids_zips_2017 <- Medicare_Part_D_Opioid_Prescriber_2017 %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(opioids = n()) %>% 
+  arrange(desc(opioids)) %>% 
+  print(medicare_high_opioids_zips_2017)
+
+test_2017 <- high_opioids_zips_2017 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table_2017 <- high_opioids_zips_2017 %>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_y_2017 <- zip_code_state_lookup_table_2017 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+
+# Join aacs_medicare_zips and medicare_high_opioids_zips_2017
+
+#ZCTAS with zip 
+
+acs_medicare_pivot_2017_zips <- acs_medicare_zips %>%
+  inner_join(high_opioids_zips_2017, by=c("NAME"="nppes_provider_zip_code")) %>%
+  mutate(opioids_per_person_2017 = opioids/total_medicare * 100) %>% 
+  arrange(desc(opioids_per_person_2017))%>%
+  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>% 
+  print(acs_medicare_pivot_2017_zips)
+
+
+# Join- 2013 and 2017 - Zip codes side by side 
+# inner join to compare 2013 and 2017 side by side. 
+
+acs_medicare_2017_2013 <- acs_medicare_pivot_2013_zips %>%
+  inner_join(acs_medicare_pivot_2017_zips, by=c("NAME")) %>%
+  select(NAME, nppes_provider_state.x, opioids_per_person_2013,opioids_per_person_2017) %>%  
+  mutate(percentage_change = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>%
+  arrange(desc(percentage_change)) %>% print(acs_medicare_2017_2013)
+
+
+
+arkansas_medicare_2017_2013 <- acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AR') %>% filter(!str_detect(NAME,"^9|^8|^75501")) %>% arrange(desc(percentage_change)) %>% print(arkansas_medicare_2017_2013)
+
+```
+
+Map 
+```{r}
+
+acs_medicare_2017_2013_AR <-acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AR') %>% filter(!str_detect(NAME,"^9|^8|^75501")) %>% arrange(desc(opioids_per_person_2017))
+
+
+zcta_geodata_shifted <- get_acs(geography = "zcta", 
+              variables = "B01001_001", geometry = TRUE) 
+
+AR_join <- zcta_geodata_shifted %>% 
+  inner_join(acs_medicare_2017_2013_AR, by = c("GEOID" = "NAME"))
+
+ AR_join %>%
+  ggplot(aes(fill = percentage_change)) +
+  geom_sf(lwd = 0) +
+  theme_map() +
+  labs(fill='Percentage Change in opioids prescribed per zip code',title="Arkansas", subtitle = "2013-2017", caption = "Source: U.S. Census ACS") +
+  theme(legend.position="right") +
+  scale_fill_viridis_c(option = "magma",labels = comma)
+```
+
+
+133 our of 145 zip codes saw an increase in opioids from 2008 to 2012. 
+
+Arkansas trend compared to Arcos database. Unfortunately, there the ARCOS database only runs up to 2012, the year before data for Arkansas through medicare. 
+
+```{r}
+# Load Arcos Arkansas data 
+Arkansas_Data <- read_tsv("data/ar.tsv") 
+
+Arkansas_edited <- Arkansas_Data %>% select(BUYER_NAME,BUYER_ZIP,BUYER_STATE,DOSAGE_UNIT,TRANSACTION_DATE)%>% clean_names() %>%  mutate(transaction_date = mdy(transaction_date))%>%
+  mutate(transaction_year = year(transaction_date)) %>%
+  select(buyer_zip,buyer_state,dosage_unit,transaction_year) %>% filter (transaction_year >= 2008) %>% group_by( buyer_zip, buyer_state, transaction_year) %>% summarise(shipments = n(), total_pills = sum(dosage_unit)) %>% arrange(desc(total_pills))
+
+
+#ACS DATA 
+
+#B01003_001 = TOTAL POPULATION 
+
+#Can only pull ACS5 DATA FOR ZCTA SO WILL ONLY LOOK AT YEARS 2008- 2012
+
+
+acs_2008_2012 <- get_acs(geography ="zcta", variables = c("B01003_001"), geometry =  FALSE, survey ="acs5", year = 2012)%>% pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_population = B01003_001)%>%
+  select(NAME, total_population, moe) %>%
+  mutate(NAME = str_remove(NAME,"ZCTA5 ")) %>% mutate (moe_percentage = moe/ total_population*100) %>% filter(moe_percentage < 10) %>% print(acs_2008_2012)
+
+acs_2008_2012 $NAME <- as.numeric(as.character(acs_2008_2012$NAME)) %>% glimpse(acs_2008_2012)
+ 
+# Join A2008 with population 
+# filtering for moe less than 10% 
+#ZCTAS with zip
+
+arkansas_pills_per_zip_arcos <- Arkansas_edited %>%
+  inner_join(acs_2008_2012, by=c("buyer_zip"="NAME")) %>%
+  mutate(pills_per_person = total_pills/total_population) %>% arrange(desc(pills_per_person))%>% select(buyer_zip, transaction_year, total_pills,total_population,pills_per_person) %>% print(arkansas_pills_per_zip_arcos)
+
+```
+
+
+GRAPHIC - YEAR BY YEAR TREND 
+
+```{r}
+  ggplot(arkansas_pills_per_zip_arcos) +
+  geom_bar(stat="identity", aes(transaction_year,total_pills), fill="royal blue") +
+  labs(x="transaction_year", y="Pills per person", title="In Arkansas, opioids rise steadily through 2012", subtitle = "Total pills shipped to Arkansas by year", caption = "Source: DEA ARCOS database, via Washington Post") +
+  scale_x_continuous(breaks = c(2008, 2009, 2010, 2011, 2012)) +
+  scale_y_continuous(labels = comma)
+
+  # Also saves a web version
+  ggsave("baltimore_pills.png", plot=last_plot())
+```
+
+
+
+133 out of 145 zip codes in Arkansas saw an increase in opioids from 2008 to 2012 
+```{r}
+arkansas_pills_per_zip_arcos_2008 <-  arkansas_pills_per_zip_arcos %>% select(buyer_zip,pills_per_person, transaction_year) %>% filter(transaction_year =='2008') %>% print()
+
+arkansas_pills_per_zip_arcos_2009 <-  arkansas_pills_per_zip_arcos %>% select(buyer_zip,pills_per_person, transaction_year) %>% filter(transaction_year =='2009') 
+
+arkansas_pills_per_zip_arcos_2010 <-  arkansas_pills_per_zip_arcos %>% select(buyer_zip,pills_per_person, transaction_year) %>% filter(transaction_year =='2010') 
+
+arkansas_pills_per_zip_arcos_2011 <-  arkansas_pills_per_zip_arcos %>% select(buyer_zip,pills_per_person, transaction_year) %>% filter(transaction_year =='2011')
+
+arkansas_pills_per_zip_arcos_2012 <-  arkansas_pills_per_zip_arcos %>% select(buyer_zip,pills_per_person, transaction_year) %>% filter(transaction_year =='2012')
+
+
+arkansas_pills <- arkansas_pills_per_zip_arcos_2008 %>%
+  inner_join(arkansas_pills_per_zip_arcos_2009, by=c("buyer_zip")) %>% mutate ( A2008 = pills_per_person.x) %>% mutate(  A2009 = pills_per_person.y) %>% select(buyer_zip, A2008, A2009) %>% 
+ print(arkansas_pills)
+ 
+
+arkansas_pills_c <- arkansas_pills %>% inner_join(arkansas_pills_per_zip_arcos_2010, by=c("buyer_zip")) %>% mutate(A2010 = pills_per_person) %>% select(buyer_zip, A2008, A2009, A2010) %>% print(arkansas_pills_c)
+
+
+arkansas_pills_b <- arkansas_pills_c %>% inner_join(arkansas_pills_per_zip_arcos_2011, by=c("buyer_zip"))%>%
+mutate(A2011 = pills_per_person) %>% select(buyer_zip, A2008, A2009, A2010,A2011) %>%
+print(arkansas_pills_b)
+
+
+arkansas_arcos_pills <- arkansas_pills_b %>% inner_join(arkansas_pills_per_zip_arcos_2012, by=c("buyer_zip")) %>%
+mutate(A2012 = pills_per_person) %>% 
+select(buyer_zip, A2008, A2009, A2010,A2011,A2012) %>% mutate(percentage_change_2008_2012 = (A2012-A2008)/A2012 *100) %>%
+rename(buyer_state = buyer_state.x) %>% arrange(desc(A2012)) %>% print(arkansas_pills_a)
+
+``` 
+
+GRAPH - ARCOS 
+```{r}
+
+
+zcta_geodata_shifted <- get_acs(geography = "zcta", 
+              variables = "B01001_001", geometry = TRUE) 
+
+
+zcta_geodata_shifted$GEOID <- as.numeric(as.character(zcta_geodata_shifted$GEOID)) %>% glimpse(acs_2008_2012)
+ 
+
+AR_ARCOS_JOIN <- zcta_geodata_shifted %>% 
+  inner_join(arkansas_arcos_pills, by = c("GEOID" = "buyer_zip"))
+
+ AR_ARCOS_JOIN %>%
+  ggplot(aes(fill = percentage_change_2008_2012)) +
+  geom_sf(lwd = 0) +
+  theme_map() +
+  labs(fill='Percentage Change in opioids prescribed per zip code from 2008 to 2012',title="Arkansas", subtitle = "2013-2017", caption = "Source: U.S. Census ACS and DEA'S ARCOS DATABASE ") +
+  theme(legend.position="right") +
+  scale_fill_viridis_c(option = "magma",labels = comma)
+```
+
+
+Inner join Arkansas medicare zip codes with Arkansas arcos zipcodes
+
+```{r}
+
+glimpse(arkansas_medicare_2017_2013)
+arkansas_medicare_2017_2013$NAME <- as.numeric(as.character(arkansas_medicare_2017_2013$NAME))
+ 
+``` 
+
+
+```{r}
+medicare_arcos<- arkansas_arcos_pills %>% inner_join(arkansas_medicare_2017_2013, by=c("buyer_zip"="NAME")) %>% print(medicare_arcos) %>% select(buyer_zip, A2012, opioids_per_person_2013, opioids_per_person_2017,percentage_change, percentage_change_2008_2012) %>%  rename(opioids_per_person_2012_ARCOS = A2012) %>% rename(percentage_change_2012_2013_medicare = percentage_change) %>% arrange(desc(opioids_per_person_2017)) %>% print(medicare_arcos)
+
+``` 
+```{r}
+medicare_arcos<- arkansas_arcos_pills %>% inner_join(arkansas_medicare_2017_2013, by=c("buyer_zip"="NAME")) %>% print(medicare_arcos) %>% select(buyer_zip, A2012, opioids_per_person_2013, opioids_per_person_2017,percentage_change, percentage_change_2008_2012) %>%  rename(opioids_per_person_2012_ARCOS = A2012) %>% rename(percentage_change_2012_2013_medicare = percentage_change) %>% arrange(desc(opioids_per_person_2012_ARCOS)) %>% print(medicare_arcos)
+
+``` 
+
+
+
+
+
+naltrexone  buprenorphine prescriptions in states?  - according to nyt opioid treatment is used more widely in states that expanded medicaid -  https://www.nytimes.com/2019/08/21/health/opioids-treatment-medicaid.html  
+ 
+the study noted that Arkansas, the only one of the five states with the lowest buprenorphine prescribing rates in Medicaid,  expanded the program.  - https://www.urban.org/research/publication/state-variation-medicaid-prescriptions-opioid-use-disorder-2011-2018 
+ 
+  prescription rate for opioids in Arkansas is sky-high, the second-highest in the country according to this 2017 ranking by the Centers for Disease Control. https://www.cdc.gov/drugoverdose/maps/rxstate2017.html  
+ 
+ 
