@@ -30,6 +30,7 @@ library(mapview)
 library(ggthemes)
 library(datasets)
 library(plotly)
+library(lubridate)
 ```
 
 Analyzing the Medicare Part D Opioid Prescriber Sumamry Files fom 2013 to 2017, an increase in opioids is present in  Arkansas, North Dakota,Indiana, Florida, Kentucky and Iowa. All other states saw a decrease in opioids prescribed. Arkansas has the biggest increase, a 3.11% increase (below is a comparison of pills per person by state). 
@@ -93,10 +94,8 @@ acs_medicare_pivot_2013_acs1 <- acs_2013 %>%
   mutate(opioids_per_person_2013 = total_opioids_2013/total_medicare * 100)  %>% 
   mutate(moe_percentage = moe/total_medicare*100) %>% filter(moe_percentage < 10) %>%
   arrange(desc(opioids_per_person_2013)) %>% print(acs_medicare_pivot_2013_acs1)%>% print(acs_medicare_pivot_2013_acs1)
-```
 
-```{r}
-
+#2017 analysis
 
 #Medicare Part D Opioid Prescriber Summary File (2017) -
 #2017 
@@ -135,15 +134,37 @@ acs_medicare_pivot_2017_acs1 <- acs_2017 %>%
   mutate(opioids_per_person_2017 = total_opioids_2017/total_medicare * 100) %>% 
   mutate(moe_percentage = moe/total_medicare*100) %>% filter(moe_percentage < 10) %>%
   arrange(desc(opioids_per_person_2017)) %>% print(acs_medicare_pivot_2017_acs1 )
-```
 
-```{r}
 
 # inner join 
 
 states_acs_medicare_2017_2013 <- acs_medicare_pivot_2013_acs1 %>%
-  inner_join(acs_medicare_pivot_2017_acs1, by=c("NAME")) %>% select(NAME,opioids_per_person_2013,opioids_per_person_2017) %>%mutate('percentage change' = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>% arrange(desc(`percentage change`)) %>%  print(acs_medicare_state_2017_2013)
+  inner_join(acs_medicare_pivot_2017_acs1, by=c("NAME")) %>% select(NAME,opioids_per_person_2013,opioids_per_person_2017) %>%mutate(percentage_change = (opioids_per_person_2017-opioids_per_person_2013)/opioids_per_person_2013 *100) %>% arrange(desc(percentage_change)) %>%  print(acs_medicare_state_2017_2013)
 
+```
+
+Map 
+
+Map 
+```{r}
+
+acs_medicare_2017_2013 <-states_acs_medicare_2017_2013 %>% filter(!str_detect(NAME,"^9|^8|^75501")) %>% arrange(desc(opioids_per_person_2017))
+
+
+zcta_geodata_shifted_state <- get_acs(geography = "state", 
+              variables = "B01001_001", geometry = TRUE) 
+
+state_join <- zcta_geodata_shifted_state %>% 
+  inner_join(acs_medicare_2017_2013, by = c("NAME"))
+
+ state_join %>%
+  ggplot(aes(fill = percentage_change)) +
+  geom_sf(lwd = 0) +
+        scale_x_continuous(limits = c(-125, -67))+
+        scale_y_continuous(limits = c(25, 50)) +
+  labs(fill='2013-2017',title="Percentage Change in opioids prescribed by state", caption = "ACS5") +
+  theme(legend.position="bottom") +
+  scale_fill_viridis_c(option = "magma",labels = comma)
 ```
 
 
@@ -194,8 +215,6 @@ acs_medicare_zips <- get_acs(geography = "zcta", variables = c("C27006_010", "C2
   select(NAME, total_medicare, moe) %>%
   mutate(NAME = str_remove(NAME,"ZCTA5 "))
 
-
-
 # Join acs_medicare_zips_2013 and high_opioids_zips_2013
 # filtering for moe less than 10% 
 #ZCTAS with zip 
@@ -206,10 +225,8 @@ acs_medicare_pivot_2013_zips <- acs_medicare_zips %>%
   mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
   print(acs_medicare_pivot_2013_zips)
 
-```
-2017 by zip 
-```{r}
 
+# 2017 by zip 
 #high_opioids_zips_2017 has zip codes descending from most opioids to least (shows states as well)
 
 high_opioids_zips_2017 <- Medicare_Part_D_Opioid_Prescriber_2017 %>% 
@@ -261,10 +278,9 @@ acs_medicare_2017_2013 <- acs_medicare_pivot_2013_zips %>%
 
 
 
-arkansas_medicare_2017_2013 <- acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AR') %>% filter(!str_detect(NAME,"^9|^8|^75501")) %>% arrange(desc(percentage_change)) %>% print(arkansas_medicare_2017_2013)
+arkansas_medicare_2017_2013 <- acs_medicare_2017_2013 %>% filter(`nppes_provider_state.x` == 'AR') %>% filter(!str_detect(NAME,"^9|^8|^75501")) %>% arrange(desc(opioids_per_person_2017)) %>% print(arkansas_medicare_2017_2013)
 
 ```
-
 Map 
 ```{r}
 
@@ -280,14 +296,14 @@ AR_join <- zcta_geodata_shifted %>%
  AR_join %>%
   ggplot(aes(fill = percentage_change)) +
   geom_sf(lwd = 0) +
-  theme_map() +
-  labs(fill='Percentage Change in opioids prescribed per zip code',title="Arkansas", subtitle = "2013-2017", caption = "Source: U.S. Census ACS") +
+  theme_map()  +
+   labs(fill='Percentage Change in opioids prescribed per zip code',title="Arkansas", subtitle = "2013-2017", caption = "Source: U.S. Census ACS") +
   theme(legend.position="right") +
   scale_fill_viridis_c(option = "magma",labels = comma)
 ```
 
 
-133 our of 145 zip codes saw an increase in opioids from 2008 to 2012. 
+133 our of 145 zip codes saw an increase in opioids from 2008 to 2012 utilizing ARCOS data. 
 
 Arkansas trend compared to Arcos database. Unfortunately, there the ARCOS database only runs up to 2012, the year before data for Arkansas through medicare. 
 
@@ -373,9 +389,33 @@ rename(buyer_state = buyer_state.x) %>% arrange(desc(A2012)) %>% print(arkansas_
 
 ``` 
 
+Graph Arcos, 
+- Zip codes with most pills per person, change in pills prescribed from 2008- 2012 
+
+````{r}
+arkansas_top_pills_arcos <- arkansas_pills_per_zip_arcos %>% 
+group_by(buyer_zip, transaction_year, pills_per_person) %>% 
+filter(buyer_zip %in% c("72901","72342","72015","72632")) %>% select (buyer_zip,transaction_year, pills_per_person) %>%
+print()
+
+# Zip codes with most pills per person, change in pills prescribed from 2008- 2012 
+
+ ggplot(arkansas_top_pills_arcos) +
+  geom_bar(stat="identity", aes(transaction_year, pills_per_person, fill=buyer_zip)) +
+  labs(x="Year", y="Pills per person", title="0pioids prescribed in zip codes in Arkansas", subtitle = "Total pills per year shipped to Fort Smith(72901), Phillips County (72342), Benton (72015), Carroll County (72632)", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
+  scale_x_continuous(breaks = c(2008, 2009, 2010, 2011, 2012)) +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(nrow=2, . ~ buyer_zip) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill="none")
+
+
+```
+
+Overall pills per person increased in Arkansas from 2008 to 2012
+
 GRAPH - ARCOS 
 ```{r}
-
 
 zcta_geodata_shifted <- get_acs(geography = "zcta", 
               variables = "B01001_001", geometry = TRUE) 
@@ -396,34 +436,57 @@ AR_ARCOS_JOIN <- zcta_geodata_shifted %>%
   scale_fill_viridis_c(option = "magma",labels = comma)
 ```
 
+Zip code that saw considerable increases in opioids in both ARCOS and Medicare is 72901- 
+
 
 Inner join Arkansas medicare zip codes with Arkansas arcos zipcodes
-
 ```{r}
 
 glimpse(arkansas_medicare_2017_2013)
 arkansas_medicare_2017_2013$NAME <- as.numeric(as.character(arkansas_medicare_2017_2013$NAME))
- 
-``` 
 
-
-```{r}
-medicare_arcos<- arkansas_arcos_pills %>% inner_join(arkansas_medicare_2017_2013, by=c("buyer_zip"="NAME")) %>% print(medicare_arcos) %>% select(buyer_zip, A2012, opioids_per_person_2013, opioids_per_person_2017,percentage_change, percentage_change_2008_2012) %>%  rename(opioids_per_person_2012_ARCOS = A2012) %>% rename(percentage_change_2012_2013_medicare = percentage_change) %>% arrange(desc(opioids_per_person_2017)) %>% print(medicare_arcos)
-
-``` 
-```{r}
 medicare_arcos<- arkansas_arcos_pills %>% inner_join(arkansas_medicare_2017_2013, by=c("buyer_zip"="NAME")) %>% print(medicare_arcos) %>% select(buyer_zip, A2012, opioids_per_person_2013, opioids_per_person_2017,percentage_change, percentage_change_2008_2012) %>%  rename(opioids_per_person_2012_ARCOS = A2012) %>% rename(percentage_change_2012_2013_medicare = percentage_change) %>% arrange(desc(opioids_per_person_2012_ARCOS)) %>% print(medicare_arcos)
 
 ``` 
-
-
-
-
-
-naltrexone  buprenorphine prescriptions in states?  - according to nyt opioid treatment is used more widely in states that expanded medicaid -  https://www.nytimes.com/2019/08/21/health/opioids-treatment-medicaid.html  
  
-the study noted that Arkansas, the only one of the five states with the lowest buprenorphine prescribing rates in Medicaid,  expanded the program.  - https://www.urban.org/research/publication/state-variation-medicaid-prescriptions-opioid-use-disorder-2011-2018 
+
+While ARCOS data only shows until 2012, by using medicare data available from 2013 to 2017, there is also an increase in opioids prescribed through Medicare Part D. 
+
+This goes along with other studies findings that opioids prescriptions in Arkansas are sky-high. According to a 2017 Centers for Disease Control, Arkansas had the fourth higest opioid prescribing rate in the country: https://www.cdc.gov/drugoverdose/maps/rxstate2017.html  
+
+A study done by the Urban Institute also found that states that expanded Medicaid under the Affordable Care Act have seen a bigger increase in prescriptions for a medication that treats opioid use disorder (buprenorphine, methadone, and naltrexone) than others. The Affordable Care Act (2014) gave states the option of covering more adults through Medicaid. 
+
+Arkansas is one of only five states with the lowest buprenorphine prescribing rates in Medicaid, despite having expanded  Medicaid under the Affordable Care Act.  The other four were Texas, South Dakota, Florida and Kansas. The study found that, on average, the rate of Medicaid-covered prescriptions for buprenorphine was much lower in states that did not expand the program, said the New York Times (https://www.nytimes.com/2019/08/21/health/opioids-treatment-medicaid.html)
+https://www.drugabuse.gov/drugs-abuse/opioids/opioid-summaries-by-state/arkansas-opioid-summary
+
+
+
+Analysis of one zip code- This zip code saw an increase in opioids according to the ARCOS database (2008-2012), as well as throguh medicare (2013-2017)
+
+Zip code 72901- 2013, 2014, 2015, 2016, 2017 - 
+
+
+
+
+````{r}
+arkansas_top_pills_arcos <- arkansas_pills_per_zip_arcos %>% 
+group_by(buyer_zip, transaction_year, pills_per_person) %>% 
+filter(buyer_zip %in% c("72901","72342","72015","72632")) %>% select (buyer_zip,transaction_year, pills_per_person) %>%
+print()
+
+# Zip codes with most pills per person, change in pills prescribed from 2008- 2012 
+
+ ggplot(arkansas_top_pills_arcos) +
+  geom_bar(stat="identity", aes(transaction_year, pills_per_person, fill=buyer_zip)) +
+  labs(x="Year", y="Pills per person", title="0pioids prescribed in zip codes in Arkansas", subtitle = "Total pills per year shipped to Fort Smith(72901), Phillips County (72342), Benton (72015), Carroll County (72632)", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
+  scale_x_continuous(breaks = c(2008, 2009, 2010, 2011, 2012)) +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(nrow=2, . ~ buyer_zip) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill="none")
+
+
+```
  
-  prescription rate for opioids in Arkansas is sky-high, the second-highest in the country according to this 2017 ranking by the Centers for Disease Control. https://www.cdc.gov/drugoverdose/maps/rxstate2017.html  
- 
+
  

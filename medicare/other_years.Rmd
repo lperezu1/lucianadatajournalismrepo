@@ -1,0 +1,254 @@
+---
+title: "medicare"
+author: "luciana"
+date: "12/7/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+rm(list = ls())
+```
+
+```{r}
+#2013
+
+acs_medicare_pivot_2013_zips_72901 <- acs_medicare_pivot_2013_acs1 %>% filter ()
+#2014 
+
+# Medicare Part D Opioid Prescriber Summary File (2014) - 
+
+Medicare_Part_D_Opioid_Prescriber_2014 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2014.csv")
+
+Medicare_Part_D_Opioid_Prescriber_2014 <-  Medicare_Part_D_Opioid_Prescriber_2014 %>%
+ clean_names()
+
+# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
+
+Medicare_Part_D_Opioid_Prescriber_2014 <- subset(Medicare_Part_D_Opioid_Prescriber_2014, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
+
+# Define API Key
+census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
+
+Medicare_Part_D_Opioid_Prescriber_2014 <- Medicare_Part_D_Opioid_Prescriber_2014 %>% filter(nppes_provider_zip_code == '72901')
+ 
+
+high_opioids_zips_2014 <- Medicare_Part_D_Opioid_Prescriber_2014 %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(opioids = n()) %>% 
+  arrange(desc(opioids)) %>% 
+  print(high_opioids_zips_2014)
+
+test_2014 <- high_opioids_zips_2014 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table_2014 <- high_opioids_zips_2014 %>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_2014 <- zip_code_state_lookup_table_2014 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+
+#USE ACS5 DATA- ACS1 not available 
+
+#get female and males medicare and group into one sum of population by medicare by ZIPCODE 
+# 10 is male medicare over 65+ / 20 is female medicare over 65+
+
+
+acs_medicare_zips_2014 <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare, moe) %>%
+  mutate(NAME = str_remove(NAME,"ZCTA5 "))
+
+# Join acs_medicare_zips_2013 and high_opioids_zips_2013
+# filtering for moe less than 10% 
+#ZCTAS with zip 
+
+acs_medicare_pivot_2014_zips <- acs_medicare_zips_2014 %>%
+  inner_join(high_opioids_zips_2014 , by=c("NAME"="nppes_provider_zip_code")) %>%
+  mutate(opioids_per_person_2014 = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person_2014)) %>%
+  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  print(acs_medicare_pivot_2014_zips)
+
+#2015
+# Medicare Part D Opioid Prescriber Summary File (2015) - 
+
+Medicare_Part_D_Opioid_Prescriber_2015 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2015.csv")
+
+Medicare_Part_D_Opioid_Prescriber_2015 <-  Medicare_Part_D_Opioid_Prescriber_2015 %>%
+ clean_names()
+
+# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
+
+Medicare_Part_D_Opioid_Prescriber_2015 <- subset(Medicare_Part_D_Opioid_Prescriber_2015, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
+
+# Define API Key
+census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
+
+Medicare_Part_D_Opioid_Prescriber_2015 <- Medicare_Part_D_Opioid_Prescriber_2015 %>% filter(nppes_provider_zip_code == '72901')
+ 
+
+high_opioids_zips_2015 <- Medicare_Part_D_Opioid_Prescriber_2015 %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(opioids = n()) %>% 
+  arrange(desc(opioids)) %>% 
+  print(high_opioids_zips_2015)
+
+test_2015 <- high_opioids_zips_2015 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table_2015 <- high_opioids_zips_2015 %>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_2015 <- zip_code_state_lookup_table_2015 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+
+#USE ACS5 DATA- ACS1 not available 
+
+#get female and males medicare and group into one sum of population by medicare by ZIPCODE 
+# 10 is male medicare over 65+ / 20 is female medicare over 65+
+
+
+acs_medicare_zips_2015 <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare, moe) %>%
+  mutate(NAME = str_remove(NAME,"ZCTA5 "))
+
+# Join acs_medicare_zips_2013 and high_opioids_zips_2013
+# filtering for moe less than 10% 
+#ZCTAS with zip 
+
+acs_medicare_pivot_2015_zips <- acs_medicare_zips_2015 %>%
+  inner_join(high_opioids_zips_2015 , by=c("NAME"="nppes_provider_zip_code")) %>%
+  mutate(opioids_per_person_2015 = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person_2015)) %>%
+  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  print(acs_medicare_pivot_2015_zips)
+
+
+#2016
+# Medicare Part D Opioid Prescriber Summary File (2016) - 
+
+Medicare_Part_D_Opioid_Prescriber_2016 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2016.csv")
+
+Medicare_Part_D_Opioid_Prescriber_2016 <-  Medicare_Part_D_Opioid_Prescriber_2016 %>%
+ clean_names()
+
+# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
+
+Medicare_Part_D_Opioid_Prescriber_2016 <- subset(Medicare_Part_D_Opioid_Prescriber_2016, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
+
+# Define API Key
+census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
+
+Medicare_Part_D_Opioid_Prescriber_2016 <- Medicare_Part_D_Opioid_Prescriber_2016 %>% filter(nppes_provider_zip_code == '72901')
+ 
+
+high_opioids_zips_2016 <- Medicare_Part_D_Opioid_Prescriber_2016 %>% 
+  arrange(desc(opioid_claim_count)) %>%
+  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
+  summarise(opioids = n()) %>% 
+  arrange(desc(opioids)) %>% 
+  print(high_opioids_zips_2015)
+
+test_2016 <- high_opioids_zips_2016 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
+zip_code_state_lookup_table_2016 <- high_opioids_zips_2016 %>%
+  distinct %>% 
+  group_by(nppes_provider_zip_code) %>% 
+  top_n(1, opioids) %>%
+  top_n(1, nppes_provider_state) %>%
+  select(nppes_provider_zip_code, nppes_provider_state)
+
+test_2016 <- zip_code_state_lookup_table_2016 %>%
+  group_by(nppes_provider_zip_code) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+
+#USE ACS5 DATA- ACS1 not available 
+
+#get female and males medicare and group into one sum of population by medicare by ZIPCODE 
+# 10 is male medicare over 65+ / 20 is female medicare over 65+
+
+
+acs_medicare_zips_2016 <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
+  pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_medicare=C27006_010+C27006_010)%>%
+  select(NAME, total_medicare, moe) %>%
+  mutate(NAME = str_remove(NAME,"ZCTA5 "))
+
+# Join acs_medicare_zips_2013 and high_opioids_zips_2013
+# filtering for moe less than 10% 
+#ZCTAS with zip 
+
+acs_medicare_pivot_2016_zips <- acs_medicare_zips_2016 %>%
+  inner_join(high_opioids_zips_2016 , by=c("NAME"="nppes_provider_zip_code")) %>%
+  mutate(opioids_per_person_2016 = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person_2016)) %>%
+  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
+  print(acs_medicare_pivot_2016_zips)
+
+```
+
+
+
+
+# Medicare Part D Opioid Prescriber Summary File (2015) - 
+
+Medicare_Part_D_Opioid_Prescriber_2015 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2015.csv")
+
+Medicare_Part_D_Opioid_Prescriber_2015 <-  Medicare_Part_D_Opioid_Prescriber_2015 %>%
+ clean_names()
+
+# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
+
+Medicare_Part_D_Opioid_Prescriber_2015 <- subset(Medicare_Part_D_Opioid_Prescriber_2015, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
+
+
+
+# Medicare Part D Opioid Prescriber Summary File (2016) - 
+
+Medicare_Part_D_Opioid_Prescriber_2016 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2016.csv")
+
+Medicare_Part_D_Opioid_Prescriber_2016 <-  Medicare_Part_D_Opioid_Prescriber_2016 %>%
+ clean_names()
+
+# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
+
+Medicare_Part_D_Opioid_Prescriber_2016 <- subset(Medicare_Part_D_Opioid_Prescriber_2016, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
