@@ -20,235 +20,207 @@ When you click the **Knit** button a document will be generated that includes bo
 rm(list = ls())
 ```
 
+
 ```{r}
-#2013
+library(tidyverse)
+library(janitor)
+library(arcos)
+library(scales)
+library(ggrepel)
+library(tidycensus)
+library(readr)
+library(zipcode)
+library(viridis)
+library(mapview)
+library(ggthemes)
+library(datasets)
+library(plotly)
+library(lubridate)
+```
 
-acs_medicare_pivot_2013_zips_72901 <- acs_medicare_pivot_2013_acs1 %>% filter ()
-#2014 
 
-# Medicare Part D Opioid Prescriber Summary File (2014) - 
+```{r}
+v17 <- load_variables(2017, "acs5", cache = TRUE)
 
-Medicare_Part_D_Opioid_Prescriber_2014 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2014.csv")
+View(v17)
 
-Medicare_Part_D_Opioid_Prescriber_2014 <-  Medicare_Part_D_Opioid_Prescriber_2014 %>%
- clean_names()
+By race - 
+I wanted to ananalyze by pvoeryt level but this is not available at zcta level.  
+``` 
+  
+  
 
-# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
+```{r}
+acs_race_2008_2012 <- get_acs(geography ="zcta", variables = c("B02001_001"), geometry =  FALSE, survey ="acs5", year = 2012)  %>% mutate(NAME = str_remove(NAME,"ZCTA5")) %>% print() # Estimate!!Total	RACE 
 
-Medicare_Part_D_Opioid_Prescriber_2014 <- subset(Medicare_Part_D_Opioid_Prescriber_2014, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
+acs_white <- get_acs(geography = "zcta", variables = c("B02001_002"), geometry =  FALSE, survey ="acs5", year = 2012)  %>% mutate(NAME = str_remove(NAME,"ZCTA5 ")) # Estimate!!Total!!White alone	 
 
-# Define API Key
-census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
+acs_black <- get_acs(geography = "zcta", variables = c("B02001_003"), geometry =  FALSE, survey ="acs5", year = 2012)  %>% mutate(NAME = str_remove(NAME,"ZCTA5 ")) # Estimate!!Total!!Black or African American alone
 
-Medicare_Part_D_Opioid_Prescriber_2014 <- Medicare_Part_D_Opioid_Prescriber_2014 %>% filter(nppes_provider_zip_code == '72901')
+acs_indian <- get_acs(geography = "zcta", variables = c("B02001_004"), geometry =  FALSE, survey ="acs5", year = 2012)  %>% mutate(NAME = str_remove(NAME,"ZCTA5 ")) #Estimate!!Total!!American Indian and Alaska Native alone
+
+
+acs_asian <- get_acs(geography = "zcta", variables = c("B02001_005"), geometry =  FALSE, survey ="acs5", year = 2012)  %>% mutate(NAME = str_remove(NAME,"ZCTA5 ")) # Estimate!!Total!!Asian alone
+
+
+acs_ameri_indian <- get_acs(geography = "zcta", variables = c("B02001_006	"), geometry =  FALSE, survey ="acs5", year = 2012)  %>% mutate(NAME = str_remove(NAME,"ZCTA5 ")) # hawaiian
+
+acs_other <- get_acs(geography = "zcta", variables = c("B02001_007"), geometry =  FALSE, survey ="acs5", year = 2012)  %>% mutate(NAME = str_remove(NAME,"ZCTA5 ")) # hawaiian
+``` 
+
+
+
+
+
+
+
+``` 
+
+
+
+# This shows the correlation between the percentage of each race in a county and how that correlates with pills per person in a county. From this, I can see that the white percentage has the strongest correlation with pills per person than any other race I tested.
+
+
+
+pills_race <- everything_income %>%
+  inner_join(aac_asian, by="GEOID") %>%
+  inner_join(aac_black, by="GEOID") %>%
+  inner_join(aac_race, by="GEOID") %>%
+  rename("black" = "estimate.x.x") %>%
+  rename("white" = "estimate.y.y") %>%
+  rename("asian" = "estimate.y")%>%
+  select(GEOID, NAME.x.x, black, white, asian, total_pills)
+race_pills_per_person <- pills_race %>%
+  mutate(black_percentage = (black/(white+black+asian)*100)) %>%
+  mutate(white_percentage = (white/(white+black+asian)*100)) %>%
+  mutate(asian_percentage = (asian/(white+black+asian)*100)) %>%
+  mutate(non_white_percentage = 100-white_percentage) %>%
+  inner_join(pills_median, by="GEOID") %>%
+  select(GEOID, NAME.x.x.x, black_percentage, white_percentage, asian_percentage, non_white_percentage, pills_per_person)
+options(scipen=999)
+race_pills_per_person %>%
+  select(-GEOID, -NAME.x.x.x) %>%
+  correlate() %>%
+  slice(5) 
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+# Load Arcos Arkansas data 
+Arkansas_Data <- read_tsv("data/ar.tsv") 
+
+Arkansas_edited <- Arkansas_Data %>% select(BUYER_NAME,BUYER_ZIP,BUYER_STATE,DOSAGE_UNIT,TRANSACTION_DATE)%>% clean_names() %>%  mutate(transaction_date = mdy(transaction_date))%>%
+  mutate(transaction_year = year(transaction_date)) %>%
+  select(buyer_zip,buyer_state,dosage_unit,transaction_year) %>% filter (transaction_year >= 2008) %>% group_by( buyer_zip, buyer_state, transaction_year) %>% summarise(shipments = n(), total_pills = sum(dosage_unit)) %>% arrange(desc(total_pills))
+
+
+#ACS DATA 
+
+#B01003_001 = TOTAL POPULATION 
+
+#Can only pull ACS5 DATA FOR ZCTA SO WILL ONLY LOOK AT YEARS 2008- 2012
+
+
+acs_2008_2012 <- get_acs(geography ="zcta", variables = c("B01003_001"), geometry =  FALSE, survey ="acs5", year = 2012)%>% pivot_wider(values_from=estimate,names_from = variable) %>%
+  mutate(total_population = B01003_001)%>%
+  select(NAME, total_population, moe) %>%
+  mutate(NAME = str_remove(NAME,"ZCTA5 ")) %>% mutate (moe_percentage = moe/ total_population*100) %>% filter(moe_percentage < 10) %>% print(acs_2008_2012)
+
+acs_2008_2012 $NAME <- as.numeric(as.character(acs_2008_2012$NAME)) %>% glimpse(acs_2008_2012)
  
-
-high_opioids_zips_2014 <- Medicare_Part_D_Opioid_Prescriber_2014 %>% 
-  arrange(desc(opioid_claim_count)) %>%
-  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
-  summarise(opioids = n()) %>% 
-  arrange(desc(opioids)) %>% 
-  print(high_opioids_zips_2014)
-
-test_2014 <- high_opioids_zips_2014 %>%
-  group_by(nppes_provider_zip_code) %>%
-  summarise(count=n()) %>%
-  arrange(desc(count))
-
-# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
-zip_code_state_lookup_table_2014 <- high_opioids_zips_2014 %>%
-  distinct %>% 
-  group_by(nppes_provider_zip_code) %>% 
-  top_n(1, opioids) %>%
-  top_n(1, nppes_provider_state) %>%
-  select(nppes_provider_zip_code, nppes_provider_state)
-
-test_2014 <- zip_code_state_lookup_table_2014 %>%
-  group_by(nppes_provider_zip_code) %>%
-  summarise(count=n()) %>%
-  arrange(desc(count))
-
-
-#USE ACS5 DATA- ACS1 not available 
-
-#get female and males medicare and group into one sum of population by medicare by ZIPCODE 
-# 10 is male medicare over 65+ / 20 is female medicare over 65+
-
-
-acs_medicare_zips_2014 <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
-  pivot_wider(values_from=estimate,names_from = variable) %>%
-  mutate(total_medicare=C27006_010+C27006_010)%>%
-  select(NAME, total_medicare, moe) %>%
-  mutate(NAME = str_remove(NAME,"ZCTA5 "))
-
-# Join acs_medicare_zips_2013 and high_opioids_zips_2013
+# Join A2008 with population 
 # filtering for moe less than 10% 
-#ZCTAS with zip 
+#ZCTAS with zip
 
-acs_medicare_pivot_2014_zips <- acs_medicare_zips_2014 %>%
-  inner_join(high_opioids_zips_2014 , by=c("NAME"="nppes_provider_zip_code")) %>%
-  mutate(opioids_per_person_2014 = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person_2014)) %>%
-  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
-  print(acs_medicare_pivot_2014_zips)
-
-#2015
-# Medicare Part D Opioid Prescriber Summary File (2015) - 
-
-Medicare_Part_D_Opioid_Prescriber_2015 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2015.csv")
-
-Medicare_Part_D_Opioid_Prescriber_2015 <-  Medicare_Part_D_Opioid_Prescriber_2015 %>%
- clean_names()
-
-# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
-
-Medicare_Part_D_Opioid_Prescriber_2015 <- subset(Medicare_Part_D_Opioid_Prescriber_2015, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
-
-# Define API Key
-census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
-
-Medicare_Part_D_Opioid_Prescriber_2015 <- Medicare_Part_D_Opioid_Prescriber_2015 %>% filter(nppes_provider_zip_code == '72901')
- 
-
-high_opioids_zips_2015 <- Medicare_Part_D_Opioid_Prescriber_2015 %>% 
-  arrange(desc(opioid_claim_count)) %>%
-  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
-  summarise(opioids = n()) %>% 
-  arrange(desc(opioids)) %>% 
-  print(high_opioids_zips_2015)
-
-test_2015 <- high_opioids_zips_2015 %>%
-  group_by(nppes_provider_zip_code) %>%
-  summarise(count=n()) %>%
-  arrange(desc(count))
-
-# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
-zip_code_state_lookup_table_2015 <- high_opioids_zips_2015 %>%
-  distinct %>% 
-  group_by(nppes_provider_zip_code) %>% 
-  top_n(1, opioids) %>%
-  top_n(1, nppes_provider_state) %>%
-  select(nppes_provider_zip_code, nppes_provider_state)
-
-test_2015 <- zip_code_state_lookup_table_2015 %>%
-  group_by(nppes_provider_zip_code) %>%
-  summarise(count=n()) %>%
-  arrange(desc(count))
+arkansas_pills_per_zip_arcos <- Arkansas_edited %>%
+  inner_join(acs_2008_2012, by=c("buyer_zip"="NAME")) %>%
+  mutate(pills_per_person = total_pills/total_population) %>% arrange(desc(pills_per_person))%>% select(buyer_zip, transaction_year, total_pills,total_population,pills_per_person) %>% print(arkansas_pills_per_zip_arcos)
 
 
-#USE ACS5 DATA- ACS1 not available 
-
-#get female and males medicare and group into one sum of population by medicare by ZIPCODE 
-# 10 is male medicare over 65+ / 20 is female medicare over 65+
 
 
-acs_medicare_zips_2015 <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
-  pivot_wider(values_from=estimate,names_from = variable) %>%
-  mutate(total_medicare=C27006_010+C27006_010)%>%
-  select(NAME, total_medicare, moe) %>%
-  mutate(NAME = str_remove(NAME,"ZCTA5 "))
-
-# Join acs_medicare_zips_2013 and high_opioids_zips_2013
-# filtering for moe less than 10% 
-#ZCTAS with zip 
-
-acs_medicare_pivot_2015_zips <- acs_medicare_zips_2015 %>%
-  inner_join(high_opioids_zips_2015 , by=c("NAME"="nppes_provider_zip_code")) %>%
-  mutate(opioids_per_person_2015 = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person_2015)) %>%
-  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
-  print(acs_medicare_pivot_2015_zips)
-
-
-#2016
-# Medicare Part D Opioid Prescriber Summary File (2016) - 
-
-Medicare_Part_D_Opioid_Prescriber_2016 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2016.csv")
-
-Medicare_Part_D_Opioid_Prescriber_2016 <-  Medicare_Part_D_Opioid_Prescriber_2016 %>%
- clean_names()
-
-# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
-
-Medicare_Part_D_Opioid_Prescriber_2016 <- subset(Medicare_Part_D_Opioid_Prescriber_2016, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
-
-# Define API Key
-census_api_key("549950d36c22ff16455fe196bbbd01d63cfbe6cf")
-
-Medicare_Part_D_Opioid_Prescriber_2016 <- Medicare_Part_D_Opioid_Prescriber_2016 %>% filter(nppes_provider_zip_code == '72901')
- 
-
-high_opioids_zips_2016 <- Medicare_Part_D_Opioid_Prescriber_2016 %>% 
-  arrange(desc(opioid_claim_count)) %>%
-  group_by (nppes_provider_zip_code, nppes_provider_state) %>%
-  summarise(opioids = n()) %>% 
-  arrange(desc(opioids)) %>% 
-  print(high_opioids_zips_2015)
-
-test_2016 <- high_opioids_zips_2016 %>%
-  group_by(nppes_provider_zip_code) %>%
-  summarise(count=n()) %>%
-  arrange(desc(count))
-
-# Each zip code has been assigned a state, based on the highest number of opioid claims in that zip coming from that state
-zip_code_state_lookup_table_2016 <- high_opioids_zips_2016 %>%
-  distinct %>% 
-  group_by(nppes_provider_zip_code) %>% 
-  top_n(1, opioids) %>%
-  top_n(1, nppes_provider_state) %>%
-  select(nppes_provider_zip_code, nppes_provider_state)
-
-test_2016 <- zip_code_state_lookup_table_2016 %>%
-  group_by(nppes_provider_zip_code) %>%
-  summarise(count=n()) %>%
-  arrange(desc(count))
-
-
-#USE ACS5 DATA- ACS1 not available 
-
-#get female and males medicare and group into one sum of population by medicare by ZIPCODE 
-# 10 is male medicare over 65+ / 20 is female medicare over 65+
-
-
-acs_medicare_zips_2016 <- get_acs(geography = "zcta", variables = c("C27006_010", "C27006_020"), geometry =  FALSE, survey ="acs5", year = 2017) %>%
-  pivot_wider(values_from=estimate,names_from = variable) %>%
-  mutate(total_medicare=C27006_010+C27006_010)%>%
-  select(NAME, total_medicare, moe) %>%
-  mutate(NAME = str_remove(NAME,"ZCTA5 "))
-
-# Join acs_medicare_zips_2013 and high_opioids_zips_2013
-# filtering for moe less than 10% 
-#ZCTAS with zip 
-
-acs_medicare_pivot_2016_zips <- acs_medicare_zips_2016 %>%
-  inner_join(high_opioids_zips_2016 , by=c("NAME"="nppes_provider_zip_code")) %>%
-  mutate(opioids_per_person_2016 = opioids/total_medicare * 100) %>% arrange(desc(opioids_per_person_2016)) %>%
-  mutate (moe_percentage = moe/ total_medicare*100) %>% filter(moe_percentage < 10) %>%
-  print(acs_medicare_pivot_2016_zips)
 
 ```
 
 
 
 
-# Medicare Part D Opioid Prescriber Summary File (2015) - 
-
-Medicare_Part_D_Opioid_Prescriber_2015 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2015.csv")
-
-Medicare_Part_D_Opioid_Prescriber_2015 <-  Medicare_Part_D_Opioid_Prescriber_2015 %>%
- clean_names()
-
-# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
-
-Medicare_Part_D_Opioid_Prescriber_2015 <- subset(Medicare_Part_D_Opioid_Prescriber_2015, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
 
 
 
-# Medicare Part D Opioid Prescriber Summary File (2016) - 
 
-Medicare_Part_D_Opioid_Prescriber_2016 <-read_csv ("data/Medicare_Part_D_Opioid_Prescriber_Summary_File_2016.csv")
 
-Medicare_Part_D_Opioid_Prescriber_2016 <-  Medicare_Part_D_Opioid_Prescriber_2016 %>%
- clean_names()
 
-# Include only States, DC, and Puerto Rico. Remove territories or military locations: "XX" "ZZ" "VI" "MP" "GU" "AS" "AP" "AA" "AE". Then remove unused State factor levels. 
 
-Medicare_Part_D_Opioid_Prescriber_2016 <- subset(Medicare_Part_D_Opioid_Prescriber_2016, !(nppes_provider_state %in% c("XX" ,"ZZ", "VI", "MP", "GU", "AS", "AP", "AA", "AE")))
+```{r}
+pills_population <- pills %>%
+  inner_join(race, by=c("countyfips" = "GEOID")) %>%
+  group_by(BUYER_COUNTY, BUYER_STATE, countyfips) %>%
+  summarise(total_pills = sum(DOSAGE_UNIT), total_population = sum(estimate)) %>%
+  mutate(pills_per_person = total_pills/total_population) %>%
+  inner_join(everything, by=c("countyfips" = "GEOID"))
+pills_population <- as.data.frame(pills_population)
+pills_population %>%
+  select(-BUYER_COUNTY, -BUYER_STATE, -countyfips, -NAME.x) %>%
+  correlate()
+```
+
+
+
+
+
+
+
+```{r}
+# I used this to find where in the country had the strongest correlation of the white population and median household income to pills per person. From this, I was able to find the nine counties in Kentucky that were majority white with a median household income of under $25,000. 
+pills_median_case <- pills_median %>%
+  mutate(income = case_when(
+    estimate >= 75000 ~ "75+",
+    estimate >= 50000 ~ "50-74.99",
+    estimate >= 25000 ~ "25-49.99",
+    TRUE ~ "25 under")
+  ) %>%
+  # group_by(income) %>%
+  # summerise((average = mean(pills_per_person))
+  inner_join(race_pills_per_person, by="GEOID") %>%
+  mutate(nonewhite_percentage = case_when(
+    non_white_percentage >= 20 ~ "20+ Nonwhite Percentage",
+    TRUE ~ "Under 20 Nonwhite Percentage")) 
+pills_median_case%>%
+  group_by(income, nonewhite_percentage) %>%
+  summarise(average = mean(pills_per_person.x),
+            count=n()) %>%
+  arrange(desc(nonewhite_percentage, income))
+  
+pills_median_case %>%
+  filter(nonewhite_percentage == "Under 20 Nonwhite Percentage") %>%
+  ggplot() +
+  geom_point(aes(estimate, pills_per_person.x)) +
+  labs(title="Pills Per Person and Median Household Income", caption = "Source: DEA ARCOS database, via Washington Post", fill="") +
+  scale_y_continuous(labels = comma) +
+  scale_x_continuous(labels = comma) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_smooth(aes(estimate, pills_per_person.x), method = "loess", se = FALSE)
+pills_median_case %>%
+  filter(nonewhite_percentage == "Under 20 Nonwhite Percentage") %>%
+  select(estimate, pills_per_person.x) %>%
+  correlate()
+```
+
+```{r}
+# I used this to find which pharmacies in Clay County received the most pills and how far back the records for those pharmacies went. This also helped me figure out how many chain and retail pharmacies were in Clay County. 
+buyer_annual <- combined_buyer_annual(key = key) %>%
+  filter(BUYER_STATE == "KY", BUYER_COUNTY == "CLAY", year == "2012") %>%
+  group_by(BUYER_COUNTY, BUYER_STATE, BUYER_BUS_ACT) %>%
+  summarise(n())
+```
